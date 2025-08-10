@@ -65,10 +65,14 @@ void showLogo() {
 int main() {
     showLogo();
 
+    std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
     cout << "\nPrepping dataset, and preprocessing data for algorithms. Please wait...\n" << endl;
 
     cout << "[.] Loading JSON file..." << flush;
-    ifstream f("../games.json");
+
+    //ifstream f("../../../games.json"); //Visual Studio
+	ifstream f("../games.json"); //CLion
+
     if (!f.is_open()) {
         cout << "\n[X] Error: Could not open given JSON." << endl;
         return 1;
