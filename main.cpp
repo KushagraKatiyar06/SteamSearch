@@ -18,10 +18,21 @@
 #include "multiFeatureSimilarity.h"
 #include "algorithms_B.h"
 #include "RapidFuzzie.h"
+#include "crow.h"
 
 using json = nlohmann::json;
 using namespace std;
 
+
+void test() {
+    crow::SimpleApp app;
+
+    CROW_ROUTE(app, "/")([](){
+        return "Hello from Crow!";
+    });
+
+    app.port(18080).multithreaded().run();
+}
 // NOTICE: the CLI does not print foreign language characters correctly. Keep that in mind when there is input that
 // looks unintelligible. That is always an issue with the CLI. We already removed ™ ® © during preprocessing. But it
 // doesn't feel proper to replace accented characters or other foregin language characters from games, it's too
@@ -64,13 +75,14 @@ void showLogo() {
 
 int main() {
     showLogo();
+    test();
 
     std::cout << "Current working directory: " << std::filesystem::current_path() << std::endl;
     cout << "\nPrepping dataset, and preprocessing data for algorithms. Please wait...\n" << endl;
 
     cout << "[.] Loading JSON file..." << flush;
 
-    //ifstream f("../../../games.json"); //Visual Studio
+    //ifstream f("../../../games_less.json"); //Visual Studio
 	ifstream f("../games.json"); //CLion
 
     if (!f.is_open()) {
