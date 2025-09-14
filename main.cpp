@@ -21,11 +21,7 @@
 using json = nlohmann::json;
 using namespace std;
 
-void printLinks() {
-    std::cout << "link:  http://localhost:18080/api/games" << std::endl;
-    std::cout << "http://localhost:18080" << std::endl;
-}
-
+// Declare your global data structures here so they can be accessed by routes
 unordered_map<string, Game> metaData;
 unordered_map<string, int> indexedTags;
 cosineSimilarity cosineSim(indexedTags);
@@ -33,9 +29,17 @@ minHash minHash(150, indexedTags);
 algorithms_b decisionTree;
 unordered_map<string, string> decoder;
 
+void printLinks() {
+
+    std::cout << "link:  http://localhost:18080/api/games" << std::endl;
+
+    std::cout << "http://localhost:18080" << std::endl;
+
+}
+
 void setup_server_data() {
     try {
-        ifstream f("games.json");
+        ifstream f("games_half.json");
         if (!f.is_open()) {
             throw runtime_error("Could not open games_half.json.");
         }
@@ -215,6 +219,9 @@ crow::response jaccard_api(const crow::request& req) {
     int count = 0;
     const int num_games_to_list = 10;
 
+    recommendationsJson["selectedGame"]["name"] = source;
+    recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
+
     while (!maxHeap.empty() && count < num_games_to_list) {
         auto top = maxHeap.top();
         maxHeap.pop();
@@ -258,6 +265,9 @@ crow::response weighted_jaccard_api(const crow::request& req) {
     int count = 0;
     const int num_games_to_list = 10;
 
+    recommendationsJson["selectedGame"]["name"] = source;
+    recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
+
     while (!maxHeap.empty() && count < num_games_to_list) {
         auto top = maxHeap.top();
         maxHeap.pop();
@@ -298,6 +308,9 @@ crow::response cosine_api(const crow::request& req) {
     crow::json::wvalue recommendationsJson;
     int count = 0;
     const int num_games_to_list = 10;
+
+    recommendationsJson["selectedGame"]["name"] = source;
+    recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
 
     while (!maxHeap.empty() && count < num_games_to_list) {
         auto top = maxHeap.top();
@@ -345,6 +358,9 @@ crow::response minhash_api(const crow::request& req) {
     int count = 0;
     const int num_games_to_list = 10;
 
+    recommendationsJson["selectedGame"]["name"] = source;
+    recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
+
     while (!maxHeap.empty() && count < num_games_to_list) {
         auto top = maxHeap.top();
         maxHeap.pop();
@@ -391,6 +407,9 @@ crow::response multi_feature_api(const crow::request& req) {
     int count = 0;
     const int num_games_to_list = 10;
 
+    recommendationsJson["selectedGame"]["name"] = source;
+    recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
+
     while (!topSimilarGames.empty() && count < num_games_to_list) {
         auto top = topSimilarGames.top();
         topSimilarGames.pop();
@@ -424,6 +443,9 @@ crow::response decision_tree_api(const crow::request& req) {
     int count = 0;
     const int num_games_to_list = 10;
 
+    recommendationsJson["selectedGame"]["name"] = source;
+    recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
+
     for (const auto& gameName : rankings) {
         if (count >= num_games_to_list) {
             break;
@@ -433,7 +455,7 @@ crow::response decision_tree_api(const crow::request& req) {
         }
 
         recommendationsJson["games"][count]["name"] = gameName;
-        recommendationsJson["games"][count]["score"] = 0; // Decision Tree doesn't have a numerical score
+        recommendationsJson["games"][count]["score"] = 0;
         recommendationsJson["games"][count]["reviewScore"] = metaData[gameName].getReviewScore();
         recommendationsJson["games"][count]["imageURL"] = metaData[gameName].getImageURL();
         recommendationsJson["games"][count]["visualization_data"] = getVisualizationData(source, gameName, "decision_tree");

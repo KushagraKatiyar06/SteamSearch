@@ -76,16 +76,32 @@
             padding: 10px;
             border-radius: 8px;
             text-align: left;
-            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            position: relative;
+        }
+        .game-info {
+            flex-grow: 1;
+            margin-bottom: 10px;
         }
         .game-item h3 {
-            margin: 0;
+            margin: 0 0 5px 0;
             font-size: 1.1em;
+            line-height: 1.3;
         }
         .game-item p {
-            margin: 5px 0 0;
+            margin: 0 0 5px 0;
             font-size: 0.9em;
             color: #66c0f4;
+        }
+        .game-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 4px;
+            display: block;
         }
         .controls-container {
             margin-top: 20px;
@@ -204,6 +220,23 @@
             border-radius: 3px;
             background-color: #2a475e;
         }
+        .visualize-btn {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background-color: #66c0f4;
+            color: #171a21;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 0.8em;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+        .visualize-btn:hover {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -264,7 +297,7 @@
         if (algo === 'jaccard' || algo === 'weighted_jaccard') {
             visHTML += `<div class="vis-container"><h4>Tag Overlap (Venn Diagram)</h4><svg id="venn-vis-svg"></svg><p>This shows the shared and unique tags between the two games.</p></div>`;
         } else if (algo === 'cosine') {
-            visHTML += `<div class="vis-container"><h4>Vector Similarity</h4><svg id="cosine-vis-svg"></svg><p id="cosine-text">Calculating angle...</p></div>`;
+            visHTML += `<div class="vis-container"><h4>Vector Similarity</h4><svg id="cosine-vis-svg"></svg><p id="cosine-text">Similarity Score: ${(game.score * 100).toFixed(2)}%</p></div>`;
         } else if (algo === 'minhash') {
             let blocks = visData.matches_array.map(match => `<div class="hash-block"></div>`).join('');
             visHTML += `<div class="vis-container"><h4>Signature Similarity</h4><div class="minhash-vis">${blocks}</div><p>Comparing the games' 150-hash "fingerprints". Each block represents a hash value. Green blocks are identical matches.</p></div>`;
@@ -273,7 +306,54 @@
             const total = scores.reduce((a, b) => a + b, 0);
             visHTML += `<div class="vis-container"><h4>Multi-Feature Score Breakdown</h4><div class="bar-chart"><div class="bar-segment" style="width:0%; background-color:#66c0f4;" data-width="${(visData.tags_score/total*100) || 0}">Tags</div><div class="bar-segment" style="width:0%; background-color:#78d4ff;" data-width="${(visData.publishers_score/total*100) || 0}">Publishers</div><div class="bar-segment" style="width:0%; background-color:#8adfff;" data-width="${(visData.developers_score/total*100) || 0}">Developers</div><div class="bar-segment" style="width:0%; background-color:#9cebff;" data-width="${(visData.review_score/total*100) || 0}">Reviews</div></div><p>The final score is a weighted average. The chart shows how much each feature contributed.</p></div>`;
         } else if (algo === 'decision_tree') {
-            visHTML += `<div class="vis-container"><h4>Decision Path</h4><svg id="dt-vis-svg"></svg></div>`;
+            const path = visData.path;
+            const nodes = [
+                { x: 250, y: 30, text: 'Start' },
+                { x: 125, y: 100, text: 'Same Dev?' },
+                { x: 375, y: 100, text: 'Same Genre?' },
+                { x: 125, y: 170, text: 'Same Pub?' },
+                { x: 375, y: 170, text: 'Shared Tags?' },
+                { x: 250, y: 240, text: path[path.length-1] }
+            ];
+            const nodeMap = { 'Start': 0, 'Shared Developer': 1, 'Shared Genre': 2, 'Shared Publisher': 3, 'Shared Tag': 4 };
+            const finalNodeIndex = 5;
+
+            let html = '';
+            nodes.forEach(n => html += `<g class="dt-node" style="opacity:0.2;"><circle cx="${n.x}" cy="${n.y}" r="25" fill="#2a475e" stroke="#66c0f4" /><text x="${n.x}" y="${n.y+4}" fill="#c7d5e0" text-anchor="middle" font-size="10">${n.text}</text></g>`);
+            svg.innerHTML = html;
+
+            const tl = anime.timeline({ easing: 'easeOutExpo', duration: 500 });
+            tl.add({ targets: '.dt-node', opacity: 0.2, duration: 500 });
+
+            let lastNode = nodes[0];
+            anime({ targets: svg.querySelectorAll('.dt-node')[0], opacity: 1, duration: 400 });
+
+            path.forEach((p, i) => {
+                let key = p.split(':')[0];
+                let nextNodeIndex = nodeMap[key] || finalNodeIndex;
+                let nextNode = nodes[nextNodeIndex];
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', lastNode.x);
+                line.setAttribute('y1', lastNode.y);
+                line.setAttribute('x2', lastNode.x);
+                line.setAttribute('y2', lastNode.y);
+                line.setAttribute('stroke', '#a1cd44');
+                line.setAttribute('stroke-width', '3');
+                svg.insertBefore(line, svg.firstChild);
+
+                tl.add({
+                    targets: line,
+                    x2: nextNode.x,
+                    y2: nextNode.y,
+                    duration: 600
+                }).add({
+                    targets: svg.querySelectorAll('.dt-node')[nextNodeIndex],
+                    opacity: 1,
+                    duration: 400
+                }, '-=200');
+                lastNode = nextNode;
+            });
         }
 
         modalBody.innerHTML = visHTML;
@@ -353,7 +433,6 @@
                 easing: 'easeInOutExpo'
             });
         } else if (algo === 'decision_tree') {
-            const svg = document.getElementById('dt-vis-svg');
             const path = visData.path;
             const nodes = [
                 { x: 250, y: 30, text: 'Start' },
@@ -439,24 +518,40 @@
                 timingInfo.textContent = `Time to calculate: ${data.timing_ms} ms`;
                 selectedGameCard.innerHTML = `
                     <h3>Selected Game: ${gameName}</h3>
-                    <img src="${data.games[0].imageURL}" alt="${gameName}">
+                    <img src="${data.selectedGame.imageURL}" alt="${gameName}">
                 `;
                 selectedGameCard.style.display = 'block';
 
                 data.games.forEach(game => {
                     const li = document.createElement('li');
                     li.className = 'game-item';
+
+                    const gameInfoDiv = document.createElement('div');
+                    gameInfoDiv.className = 'game-info';
                     let scoreText = game.score !== 0 ? `<p>Similarity Score: ${(game.score * 100).toFixed(2)}%</p>` : '';
                     if (algorithm === 'decision_tree' || game.score === -1) {
                         scoreText = '';
                     }
-                    li.innerHTML = `
+                    gameInfoDiv.innerHTML = `
                         <h3>${game.name}</h3>
                         <p>Review Score: ${(game.reviewScore * 100).toFixed(2)}%</p>
                         ${scoreText}
-                        <img src="${game.imageURL}" alt="${game.name}" style="width: 100%; height: auto; border-radius: 4px;">
                     `;
-                    li.onclick = () => showVisualization(game, gameName, algorithm);
+
+                    const img = document.createElement('img');
+                    img.src = game.imageURL;
+                    img.alt = game.name;
+
+                    const visualizeBtn = document.createElement('span');
+                    visualizeBtn.className = 'visualize-btn';
+                    visualizeBtn.textContent = 'Visualize';
+                    visualizeBtn.addEventListener('click', () => {
+                        showVisualization(game, gameName, algorithm);
+                    });
+
+                    li.appendChild(gameInfoDiv);
+                    li.appendChild(img);
+                    li.appendChild(visualizeBtn);
                     recommendationsList.appendChild(li);
                 });
             } else {
