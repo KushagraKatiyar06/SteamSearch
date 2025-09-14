@@ -31,8 +31,6 @@ unordered_map<string, string> decoder;
 
 void printLinks() {
 
-    std::cout << "link:  http://localhost:18080/api/games" << std::endl;
-
     std::cout << "http://localhost:18080" << std::endl;
 
 }
