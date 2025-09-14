@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Game Recommender</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #1b2838;
+            color: #c7d5e0;
+            margin: 0;
+            padding: 1em;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #171a21;
+            padding: 2em;
+            border-radius: 8px;
+            position: relative;
+        }
+        h1 {
+            color: #66c0f4;
+        }
+        .search-container {
+            margin: 20px 0;
+            position: relative;
+        }
+        #game-search {
+            width: 70%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #2a475e;
+            background-color: #2a475e;
+            color: #c7d5e0;
+            border-radius: 4px;
+        }
+        #autocomplete-list {
+            position: absolute;
+            border: 1px solid #2a475e;
+            background-color: #171a21;
+            z-index: 99;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70%;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+            text-align: left;
+        }
+        #autocomplete-list div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #2a475e;
+            color: #c7d5e0;
+        }
+        #autocomplete-list div:last-child {
+            border-bottom: none;
+        }
+        #autocomplete-list div:hover {
+            background-color: #2a475e;
+        }
+        #recommendations-list {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .game-item {
+            background-color: #2a475e;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+        }
+        .game-item h3 {
+            margin: 0;
+            font-size: 1.1em;
+        }
+        .game-item p {
+            margin: 5px 0 0;
+            font-size: 0.9em;
+            color: #66c0f4;
+        }
+        .controls-container {
+            margin-top: 20px;
+        }
+        #algorithm-select {
+            padding: 8px;
+            background-color: #2a475e;
+            color: #c7d5e0;
+            border: 1px solid #66c0f4;
+            border-radius: 4px;
+        }
+        #timing-info {
+            margin-top: 1em;
+            font-size: 1.2em;
+            color: #a1cd44;
+        }
+        #loader {
+            display: none;
+            margin-top: 2em;
+            color: #66c0f4;
+        }
+        #selected-game-card {
+            background-color: #2a475e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 2em;
+            text-align: center;
+            display: none;
+        }
+        #selected-game-card img {
+            max-width: 100%;
+            width: 460px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #171a21;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #66c0f4;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            position: relative;
+        }
+        .modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            color: #fff;
+        }
+        .vis-container {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #1b2838;
+            border-radius: 4px;
+        }
+        .vis-container h4 {
+            margin-top: 0;
+            border-bottom: 1px solid #2a475e;
+            padding-bottom: 5px;
+        }
+        .vis-container p {
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+        #venn-vis-svg, #cosine-vis-svg, #dt-vis-svg {
+            width: 100%;
+            height: 180px;
+        }
+        .bar-chart {
+            width: 100%;
+            background-color: #2a475e;
+            border-radius: 4px;
+            display: flex;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .bar-segment {
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            color: #171a21;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .minhash-vis {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            margin: 10px 0;
+        }
+        .hash-block {
+            width: 100%;
+            padding-bottom: 100%;
+            border-radius: 3px;
+            background-color: #2a475e;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Steam Game Recommender</h1>
+    <div class="search-container">
+        <input type="text" id="game-search" placeholder="Search for a game...">
+        <div id="autocomplete-list"></div>
+    </div>
+    <div class="controls-container">
+        <label for="algorithm-select">Choose Algorithm:</label>
+        <select id="algorithm-select">
+            <option value="jaccard">Jaccard Similarity</option>
+            <option value="weighted_jaccard">Weighted Jaccard</option>
+            <option value="cosine">Cosine Similarity</option>
+            <option value="minhash">Min-Hashing</option>
+            <option value="multi_feature">Multi-Feature Similarity</option>
+            <option value="decision_tree">Decision Tree</option>
+        </select>
+    </div>
+    <div id="loader">Loading recommendations...</div>
+    <div id="selected-game-card"></div>
+    <div id="timing-info"></div>
+    <ul id="recommendations-list">
+    </ul>
+</div>
+
+<div id="vis-modal" class="modal-overlay">
+    <div class="modal-content">
+        <span class="modal-close">&times;</span>
+        <div id="modal-body"></div>
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('game-search');
+    const recommendationsList = document.getElementById('recommendations-list');
+    const autocompleteList = document.getElementById('autocomplete-list');
+    const algorithmSelect = document.getElementById('algorithm-select');
+    const timingInfo = document.getElementById('timing-info');
+    const loader = document.getElementById('loader');
+    const selectedGameCard = document.getElementById('selected-game-card');
+
+    const modal = document.getElementById('vis-modal');
+    const modalBody = document.getElementById('modal-body');
+    const modalClose = document.querySelector('.modal-close');
+
+    let currentSelectedGame = null;
+
+    modalClose.onclick = () => modal.style.display = "none";
+    window.onclick = (event) => { if (event.target == modal) modal.style.display = "none"; }
+
+    function showVisualization(game, selectedGameName, algo) {
+        const visData = game.visualization_data;
+        let visHTML = `<h3>${game.name}</h3><p>Recommended based on <strong>${selectedGameName}</strong> using <strong>${algorithmSelect.options[algorithmSelect.selectedIndex].text}</strong></p>`;
+
+        if (algo === 'jaccard' || algo === 'weighted_jaccard') {
+            visHTML += `<div class="vis-container"><h4>Tag Overlap (Venn Diagram)</h4><svg id="venn-vis-svg"></svg><p>This shows the shared and unique tags between the two games.</p></div>`;
+        } else if (algo === 'cosine') {
+            visHTML += `<div class="vis-container"><h4>Vector Similarity</h4><svg id="cosine-vis-svg"></svg><p id="cosine-text">Calculating angle...</p></div>`;
+        } else if (algo === 'minhash') {
+            let blocks = visData.matches_array.map(match => `<div class="hash-block"></div>`).join('');
+            visHTML += `<div class="vis-container"><h4>Signature Similarity</h4><div class="minhash-vis">${blocks}</div><p>Comparing the games' 150-hash "fingerprints". Each block represents a hash value. Green blocks are identical matches.</p></div>`;
+        } else if (algo === 'multi_feature') {
+            const scores = Object.values(visData);
+            const total = scores.reduce((a, b) => a + b, 0);
+            visHTML += `<div class="vis-container"><h4>Multi-Feature Score Breakdown</h4><div class="bar-chart"><div class="bar-segment" style="width:0%; background-color:#66c0f4;" data-width="${(visData.tags_score/total*100) || 0}">Tags</div><div class="bar-segment" style="width:0%; background-color:#78d4ff;" data-width="${(visData.publishers_score/total*100) || 0}">Publishers</div><div class="bar-segment" style="width:0%; background-color:#8adfff;" data-width="${(visData.developers_score/total*100) || 0}">Developers</div><div class="bar-segment" style="width:0%; background-color:#9cebff;" data-width="${(visData.review_score/total*100) || 0}">Reviews</div></div><p>The final score is a weighted average. The chart shows how much each feature contributed.</p></div>`;
+        } else if (algo === 'decision_tree') {
+            visHTML += `<div class="vis-container"><h4>Decision Path</h4><svg id="dt-vis-svg"></svg></div>`;
+        }
+
+        modalBody.innerHTML = visHTML;
+        modal.style.display = "flex";
+
+        // Trigger animations after modal is visible
+        if (algo === 'jaccard' || algo === 'weighted_jaccard') {
+            const svg = document.getElementById('venn-vis-svg');
+            const unique1Tags = visData.unique1;
+            const unique2Tags = visData.unique2;
+            const sharedTags = visData.shared;
+
+            svg.innerHTML = `
+                <circle cx="180" cy="90" r="80" fill="rgba(102, 192, 244, 0.5)" opacity="0" />
+                <circle cx="320" cy="90" r="80" fill="rgba(199, 213, 224, 0.5)" opacity="0" />
+            `;
+            const addText = (tags, x, y, anchor) => {
+                tags.slice(0, 5).forEach((tag, i) => {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', x);
+                    text.setAttribute('y', y + i * 15);
+                    text.setAttribute('fill', '#fff');
+                    text.setAttribute('font-size', '12');
+                    text.setAttribute('text-anchor', anchor);
+                    text.textContent = tag;
+                    text.style.opacity = 0;
+                    svg.appendChild(text);
+                });
+            };
+            addText(Array.from(unique1Tags), 180, 70, 'middle');
+            addText(Array.from(unique2Tags), 320, 70, 'middle');
+            addText(Array.from(sharedTags), 250, 70, 'middle');
+
+            anime.timeline({ easing: 'easeOutExpo' })
+                .add({ targets: '#venn-vis-svg circle', opacity: 1, duration: 500 })
+                .add({ targets: '#venn-vis-svg text', opacity: 1, duration: 500, delay: anime.stagger(100) }, '-=300');
+
+        } else if (algo === 'cosine') {
+            const svg = document.getElementById('cosine-vis-svg');
+            const score = game.score;
+            const angle = (1 - score) * 90;
+            svg.innerHTML = `
+                <line x1="50" y1="150" x2="550" y2="150" stroke="#2a475e" />
+                <line y1="20" x1="50" y2="150" stroke="#2a475e" />
+                <line x1="50" y1="150" x2="250" y2="150" stroke="#66c0f4" stroke-width="3" />
+                <line id="animated-vector" x1="50" y1="150" x2="250" y2="150" stroke="#c7d5e0" stroke-width="3" style="transform-origin: 50px 150px;" />
+                <text id="angle-text" x="70" y="130" fill="#fff" font-size="14"></text>
+            `;
+            anime({
+                targets: '#animated-vector',
+                rotate: -angle,
+                duration: 1200,
+                easing: 'easeInOutQuad'
+            });
+            anime({
+                targets: {},
+                update: function(anim) {
+                    const currentAngle = (anim.progress / 100) * angle;
+                    const currentScore = (1 - (currentAngle / 90));
+                    document.getElementById('angle-text').textContent = `Angle: ${currentAngle.toFixed(1)}°`;
+                },
+                duration: 1200,
+                easing: 'easeInOutQuad'
+            });
+        } else if (algo === 'minhash') {
+            anime({
+                targets: '.hash-block',
+                backgroundColor: (el, i) => visData.matches_array[i] ? '#a1cd44' : '#3a577e',
+                delay: anime.stagger(10)
+            });
+        } else if (algo === 'multi_feature') {
+            anime({
+                targets: '.bar-segment',
+                width: (el) => el.dataset.width + '%',
+                duration: 1000,
+                delay: anime.stagger(100),
+                easing: 'easeInOutExpo'
+            });
+        } else if (algo === 'decision_tree') {
+            const svg = document.getElementById('dt-vis-svg');
+            const path = visData.path;
+            const nodes = [
+                { x: 250, y: 30, text: 'Start' },
+                { x: 125, y: 100, text: 'Same Dev?' },
+                { x: 375, y: 100, text: 'Same Genre?' },
+                { x: 125, y: 170, text: 'Same Pub?' },
+                { x: 375, y: 170, text: 'Shared Tags?' },
+                { x: 250, y: 240, text: path[path.length-1] }
+            ];
+            const nodeMap = { 'Start': 0, 'Shared Developer': 1, 'Shared Genre': 2, 'Shared Publisher': 3, 'Shared Tag': 4 };
+            const finalNodeIndex = 5;
+
+            let html = '';
+            nodes.forEach(n => html += `<g class="dt-node" style="opacity:0.2;"><circle cx="${n.x}" cy="${n.y}" r="25" fill="#2a475e" stroke="#66c0f4" /><text x="${n.x}" y="${n.y+4}" fill="#c7d5e0" text-anchor="middle" font-size="10">${n.text}</text></g>`);
+            svg.innerHTML = html;
+
+            const tl = anime.timeline({ easing: 'easeOutExpo', duration: 500 });
+            tl.add({ targets: '.dt-node', opacity: 0.2, duration: 500 });
+
+            let lastNode = nodes[0];
+            anime({ targets: svg.querySelectorAll('.dt-node')[0], opacity: 1, duration: 400 });
+
+            path.forEach((p, i) => {
+                let key = p.split(':')[0];
+                let nextNodeIndex = nodeMap[key] || finalNodeIndex;
+                let nextNode = nodes[nextNodeIndex];
+
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', lastNode.x);
+                line.setAttribute('y1', lastNode.y);
+                line.setAttribute('x2', lastNode.x);
+                line.setAttribute('y2', lastNode.y);
+                line.setAttribute('stroke', '#a1cd44');
+                line.setAttribute('stroke-width', '3');
+                svg.insertBefore(line, svg.firstChild);
+
+                tl.add({
+                    targets: line,
+                    x2: nextNode.x,
+                    y2: nextNode.y,
+                    duration: 600
+                }).add({
+                    targets: svg.querySelectorAll('.dt-node')[nextNodeIndex],
+                    opacity: 1,
+                    duration: 400
+                }, '-=200');
+                lastNode = nextNode;
+            });
+        }
+    }
+
+
+    async function fetchRecommendations(gameName, algorithm) {
+        let apiUrl = '';
+        if (algorithm === 'jaccard') {
+            apiUrl = `/api/jaccard?game=${encodeURIComponent(gameName)}`;
+        } else if (algorithm === 'weighted_jaccard') {
+            apiUrl = `/api/weighted_jaccard?game=${encodeURIComponent(gameName)}`;
+        } else if (algorithm === 'cosine') {
+            apiUrl = `/api/cosine?game=${encodeURIComponent(gameName)}`;
+        } else if (algorithm === 'minhash') {
+            apiUrl = `/api/minhash?game=${encodeURIComponent(gameName)}`;
+        } else if (algorithm === 'multi_feature') {
+            apiUrl = `/api/multi_feature?game=${encodeURIComponent(gameName)}`;
+        } else if (algorithm === 'decision_tree') {
+            apiUrl = `/api/decision_tree?game=${encodeURIComponent(gameName)}`;
+        }
+
+        try {
+            loader.style.display = 'block';
+            timingInfo.textContent = '';
+            recommendationsList.innerHTML = '';
+
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const data = await response.json();
+
+            loader.style.display = 'none';
+
+            if (data.games && data.games.length > 0) {
+                timingInfo.textContent = `Time to calculate: ${data.timing_ms} ms`;
+                selectedGameCard.innerHTML = `
+                    <h3>Selected Game: ${gameName}</h3>
+                    <img src="${data.games[0].imageURL}" alt="${gameName}">
+                `;
+                selectedGameCard.style.display = 'block';
+
+                data.games.forEach(game => {
+                    const li = document.createElement('li');
+                    li.className = 'game-item';
+                    let scoreText = game.score !== 0 ? `<p>Similarity Score: ${(game.score * 100).toFixed(2)}%</p>` : '';
+                    if (algorithm === 'decision_tree' || game.score === -1) {
+                        scoreText = '';
+                    }
+                    li.innerHTML = `
+                        <h3>${game.name}</h3>
+                        <p>Review Score: ${(game.reviewScore * 100).toFixed(2)}%</p>
+                        ${scoreText}
+                        <img src="${game.imageURL}" alt="${game.name}" style="width: 100%; height: auto; border-radius: 4px;">
+                    `;
+                    li.onclick = () => showVisualization(game, gameName, algorithm);
+                    recommendationsList.appendChild(li);
+                });
+            } else {
+                recommendationsList.innerHTML = '<li>No recommendations found.</li>';
+                selectedGameCard.style.display = 'none';
+            }
+        } catch (e) {
+            console.error('Could not fetch recommendations:', e);
+            recommendationsList.innerHTML = '<li>Error loading recommendations.</li>';
+            timingInfo.textContent = '';
+            loader.style.display = 'none';
+            selectedGameCard.style.display = 'none';
+        }
+    }
+
+    searchInput.addEventListener('input', async (e) => {
+        const query = e.target.value;
+        autocompleteList.innerHTML = '';
+
+        if (query.length > 2) {
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+                const suggestions = await response.json();
+
+                suggestions.forEach(suggestion => {
+                    const div = document.createElement('div');
+                    div.textContent = suggestion;
+                    div.addEventListener('click', function() {
+                        searchInput.value = this.textContent;
+                        currentSelectedGame = this.textContent;
+                        autocompleteList.innerHTML = '';
+                        fetchRecommendations(currentSelectedGame, algorithmSelect.value);
+                    });
+                    autocompleteList.appendChild(div);
+                });
+            } catch (e) {
+                console.error('Error fetching search suggestions:', e);
+            }
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (e.target !== searchInput) {
+            autocompleteList.innerHTML = '';
+        }
+    });
+
+    algorithmSelect.addEventListener('change', (e) => {
+        if (currentSelectedGame) {
+            fetchRecommendations(currentSelectedGame, e.target.value);
+        }
+    });
+</script>
+
+</body>
+</html>

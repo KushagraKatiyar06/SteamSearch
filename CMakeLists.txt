@@ -41,14 +41,23 @@ find_package(Crow CONFIG REQUIRED)
 # -------------------------------
 add_executable(SteamSearch
         main.cpp
-        Game.h Game.cpp
-        readJson.h readJson.cpp
-        jaccardsSimilarity.h jaccardsSimilarity.cpp
-        minHash.h minHash.cpp
-        cosineSimilarity.h cosineSimilarity.cpp
-        multiFeatureSimilarity.h multiFeatureSimilarity.cpp
-        algorithms_B.h algorithms_B.cpp
-        RapidFuzzie.h RapidFuzzie.cpp
+        Game.h
+        Game.cpp
+        readJson.h
+        readJson.cpp
+        jaccardsSimilarity.h
+        jaccardsSimilarity.cpp
+        minHash.h
+        minHash.cpp
+        cosineSimilarity.h
+        cosineSimilarity.cpp
+        multiFeatureSimilarity.h
+        multiFeatureSimilarity.cpp
+        algorithms_B.h
+        algorithms_B.cpp
+        RapidFuzzie.h
+        RapidFuzzie.cpp
+        main.cpp
 )
 
 # -------------------------------
