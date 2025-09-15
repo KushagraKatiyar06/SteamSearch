@@ -25,7 +25,7 @@ using namespace std;
 unordered_map<string, Game> metaData;
 unordered_map<string, int> indexedTags;
 cosineSimilarity cosineSim(indexedTags);
-minHash minHash(150, indexedTags);
+minHash minHashObj(150, indexedTags);
 algorithms_b decisionTree;
 unordered_map<string, string> decoder;
 
@@ -35,9 +35,10 @@ void printLinks() {
 
 }
 
+
 void setup_server_data() {
     try {
-        ifstream f("games_half.json");
+        ifstream f("games.json");
         if (!f.is_open()) {
             throw runtime_error("Could not open games_half.json.");
         }
@@ -60,6 +61,9 @@ void setup_server_data() {
 
         cosineSim = cosineSimilarity(indexedTags);
         cosineSim.createGameSignatures(metaData);
+
+        // Corrected line
+        minHashObj = minHash(150, indexedTags);
 
     } catch (const exception& e) {
         cerr << "Error loading data: " << e.what() << endl;
@@ -159,8 +163,9 @@ crow::json::wvalue getVisualizationData(const string& source, const string& comp
         }
         visData["shared_tags"] = std::move(shared_tags_arr);
     } else if (algorithm == "minhash") {
-        vector<int> sourceSignature = minHash.createSignature(metaData[source]);
-        vector<int> compareSignature = minHash.createSignature(metaData[compare]);
+        minHash mh(150, indexedTags);
+        vector<int> sourceSignature = mh.createSignature(metaData[source]);
+        vector<int> compareSignature = mh.createSignature(metaData[compare]);
         vector<bool> matches_array;
         for (size_t i = 0; i < sourceSignature.size(); ++i) {
             matches_array.push_back(sourceSignature[i] == compareSignature[i]);
@@ -196,6 +201,7 @@ crow::json::wvalue getVisualizationData(const string& source, const string& comp
 crow::response jaccard_api(const crow::request& req) {
     auto start_time = chrono::high_resolution_clock::now();
     string source = req.url_params.get("game");
+    const int num_games_to_list = 51;
 
     if (source.empty() || metaData.find(source) == metaData.end()) {
         return crow::response(404, "Game not found.");
@@ -215,7 +221,6 @@ crow::response jaccard_api(const crow::request& req) {
 
     crow::json::wvalue recommendationsJson;
     int count = 0;
-    const int num_games_to_list = 10;
 
     recommendationsJson["selectedGame"]["name"] = source;
     recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
@@ -242,6 +247,7 @@ crow::response jaccard_api(const crow::request& req) {
 crow::response weighted_jaccard_api(const crow::request& req) {
     auto start_time = chrono::high_resolution_clock::now();
     string source = req.url_params.get("game");
+    const int num_games_to_list = 50;
 
     if (source.empty() || metaData.find(source) == metaData.end()) {
         return crow::response(404, "Game not found.");
@@ -261,7 +267,6 @@ crow::response weighted_jaccard_api(const crow::request& req) {
 
     crow::json::wvalue recommendationsJson;
     int count = 0;
-    const int num_games_to_list = 10;
 
     recommendationsJson["selectedGame"]["name"] = source;
     recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
@@ -288,6 +293,7 @@ crow::response weighted_jaccard_api(const crow::request& req) {
 crow::response cosine_api(const crow::request& req) {
     auto start_time = chrono::high_resolution_clock::now();
     string source = req.url_params.get("game");
+    const int num_games_to_list = 50;
 
     if (source.empty() || metaData.find(source) == metaData.end()) {
         return crow::response(404, "Game not found.");
@@ -305,7 +311,6 @@ crow::response cosine_api(const crow::request& req) {
 
     crow::json::wvalue recommendationsJson;
     int count = 0;
-    const int num_games_to_list = 10;
 
     recommendationsJson["selectedGame"]["name"] = source;
     recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
@@ -332,14 +337,18 @@ crow::response cosine_api(const crow::request& req) {
 crow::response minhash_api(const crow::request& req) {
     auto start_time = chrono::high_resolution_clock::now();
     string source = req.url_params.get("game");
+    const int num_games_to_list = 50;
 
     if (source.empty() || metaData.find(source) == metaData.end()) {
         return crow::response(404, "Game not found.");
     }
 
+    // MinHash is now created inside the function to ensure fresh randomization for each request.
+    minHash mh(150, indexedTags);
+
     unordered_map<string, vector<int>> allSignatures;
     for (const auto& pair : metaData) {
-        allSignatures[pair.first] = minHash.createSignature(pair.second);
+        allSignatures[pair.first] = mh.createSignature(pair.second);
     }
 
     priority_queue<pair<double, string>> maxHeap;
@@ -347,14 +356,13 @@ crow::response minhash_api(const crow::request& req) {
 
     for (const auto& pair : allSignatures) {
         if (pair.first != source) {
-            double score = minHash.miniJaccards(sourceSignature, pair.second);
+            double score = mh.miniJaccards(sourceSignature, pair.second);
             maxHeap.emplace(score, pair.first);
         }
     }
 
     crow::json::wvalue recommendationsJson;
     int count = 0;
-    const int num_games_to_list = 10;
 
     recommendationsJson["selectedGame"]["name"] = source;
     recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
@@ -381,6 +389,7 @@ crow::response minhash_api(const crow::request& req) {
 crow::response multi_feature_api(const crow::request& req) {
     auto start_time = chrono::high_resolution_clock::now();
     string source = req.url_params.get("game");
+    const int num_games_to_list = 50;
 
     if (source.empty() || metaData.find(source) == metaData.end()) {
         return crow::response(404, "Game not found.");
@@ -403,7 +412,6 @@ crow::response multi_feature_api(const crow::request& req) {
 
     crow::json::wvalue recommendationsJson;
     int count = 0;
-    const int num_games_to_list = 10;
 
     recommendationsJson["selectedGame"]["name"] = source;
     recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
@@ -430,6 +438,7 @@ crow::response multi_feature_api(const crow::request& req) {
 crow::response decision_tree_api(const crow::request& req) {
     auto start_time = chrono::high_resolution_clock::now();
     string source = req.url_params.get("game");
+    const int num_games_to_list = 50;
 
     if (source.empty() || metaData.find(source) == metaData.end()) {
         return crow::response(404, "Game not found.");
@@ -439,7 +448,6 @@ crow::response decision_tree_api(const crow::request& req) {
 
     crow::json::wvalue recommendationsJson;
     int count = 0;
-    const int num_games_to_list = 10;
 
     recommendationsJson["selectedGame"]["name"] = source;
     recommendationsJson["selectedGame"]["imageURL"] = metaData[source].getImageURL();
