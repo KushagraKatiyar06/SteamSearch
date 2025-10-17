@@ -8,6 +8,9 @@ Project is deployed on Google Cloud: https://steamsearch-58195528645.southameric
 - For Full functionality for the project -> All 6 algorithms and visualizations, run this project locally following the set
   up below.
 
+## Command Line Application Repository:
+https://github.com/NeedToLookAtMyPictures/steam_search
+
 ## Key Features
 * **Fast Recommendations**: Built on the lightweight **Crow C++ microframework** for high-performance web service handling.
 * **Multiple Algorithms**:
