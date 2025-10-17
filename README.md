@@ -141,4 +141,4 @@ docker build -t steamsearch .
 docker run -p 8080:18080 steamsearch
 ```
 
-Credits to Kushagra Katiyar, Bayaan Mahmoodi, and Agnivesh Kaundinya
+### Credits to Kushagra Katiyar, Bayaan Mahmoodi, and Agnivesh Kaundinya
