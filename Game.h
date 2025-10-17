@@ -65,7 +65,7 @@ public:
     vector<string> getGenres() const;
 
 
-    double getReviewScore() const;//returns the actual review score accounting for downvotes and upvotes
+    double getReviewScore() const; //returns the actual review score accounting for downvotes and upvotes
 
     unordered_map<string, int> getTags() const;
 
