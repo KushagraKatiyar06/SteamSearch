@@ -27,6 +27,9 @@ Due to its large file size, the primary dataset (`games.json`) is not included i
 1. Download the dataset from Kaggle: [Steam Games Dataset](https://www.kaggle.com/datasets/fronkongames/steam-games-dataset).
 2. Place the downloaded `games.json` file in the **root directory** of the project:
 
+## Project Structure
+The project has a clean and logical structure, with all core C++ files in the root directory and the front end in a separate folder.
+
 ## Local Setup
 ### Prerequisites
 
@@ -137,35 +140,3 @@ docker build -t steamsearch .
 # -p 8080:18080 maps the container's internal port (18080) to your host's port (8080).
 docker run -p 8080:18080 steamsearch
 ```
-
-## Project Structure
-The project has a clean and logical structure, with all core C++ files in the root directory and the front end in a separate folder.
-
-/SteamSearch         
-├── public/
-│   └── index.html  
-├── Dockerfile
-├── CLI.cpp # need to adjust cmake targets for this to work, this is the command line appliaction without frontend
-├── algorithms_B.cpp
-├── algorithms_B.h
-├── CMakeLists.txt
-├── cosineSimilarity.cpp
-├── cosineSimilarity.h
-├── decoder.txt        
-├── games.json           
-├── Game.cpp
-├── Game.h
-├── jaccardsSimilarity.cpp
-├── jaccardsSimilarity.h
-├── main.cpp            
-├── minHash.cpp
-├── minHash.h
-├── multiFeatureSimilarity.cpp
-├── multiFeatureSimilarity.h
-├── RapidFuzzie.cpp      
-├── RapidFuzzie.h
-├── readJson.cpp
-├── readJson.h
-└── tags.txt             
-
-
