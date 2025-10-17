@@ -140,3 +140,5 @@ docker build -t steamsearch .
 # -p 8080:18080 maps the container's internal port (18080) to your host's port (8080).
 docker run -p 8080:18080 steamsearch
 ```
+
+Credits to Kushagra Katiyar, Bayaan Mahmoodi, and Agnivesh Kaundinya
