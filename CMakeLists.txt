@@ -1,13 +1,11 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.22)
 project(SteamSearch)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# -------------------------------
-# Fetch dependencies
-# -------------------------------
+
 include(FetchContent)
 
 # nlohmann_json
@@ -36,9 +34,7 @@ FetchContent_MakeAvailable(asio)
 # Crow
 find_package(Crow CONFIG REQUIRED)
 
-# -------------------------------
-# Define executable
-# -------------------------------
+
 add_executable(SteamSearch
         main.cpp
         Game.h
@@ -60,9 +56,7 @@ add_executable(SteamSearch
         main.cpp
 )
 
-# -------------------------------
-# Link libraries
-# -------------------------------
+
 target_link_libraries(SteamSearch PRIVATE
         Crow::Crow
         nlohmann_json::nlohmann_json
@@ -70,9 +64,7 @@ target_link_libraries(SteamSearch PRIVATE
         asio::asio
 )
 
-# -------------------------------
-# Platform-specific libraries
-# -------------------------------
+
 if(WIN32)
     target_link_libraries(SteamSearch PRIVATE Ws2_32 Mswsock)
 endif()

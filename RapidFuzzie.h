@@ -24,6 +24,4 @@ public:
     bool getSuccess();
 };
 
-
-
 #endif //RAPIDFUZZIE_H

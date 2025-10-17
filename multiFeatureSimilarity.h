@@ -25,5 +25,4 @@ double calculateReviewScoreSimilarity(double scoreA, double scoreB);
 // Calculates the overall weighted similarity between two games based on multiple features.
 double calculateOverallWeightedSimilarity(const Game& gameA, const Game& gameB, double weightTags, double weightPublishers, double weightDevelopers, double weightReviewScore);
 
-
 #endif //MULTIFEATURESIMILARITY_H

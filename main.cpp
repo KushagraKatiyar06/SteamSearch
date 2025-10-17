@@ -13,7 +13,7 @@
 #include <rapidfuzz/fuzz.hpp>
 #include <algorithm>
 #include <queue>
-#include <filesystem>
+#include <unistd.h>
 #include <chrono>
 #include <stdexcept>
 #include <set>
@@ -21,7 +21,6 @@
 using json = nlohmann::json;
 using namespace std;
 
-// Declare your global data structures here so they can be accessed by routes
 unordered_map<string, Game> metaData;
 unordered_map<string, int> indexedTags;
 cosineSimilarity cosineSim(indexedTags);
@@ -31,16 +30,20 @@ unordered_map<string, string> decoder;
 
 void printLinks() {
 
-    std::cout << "http://localhost:18080" << std::endl;
+    std::cout << "http://localhost:8081" << std::endl;
 
 }
 
-
 void setup_server_data() {
+
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    std::cout << "Current working directory: " << cwd << std::endl;
+
     try {
         ifstream f("games.json");
         if (!f.is_open()) {
-            throw runtime_error("Could not open games_half.json.");
+            throw runtime_error("Could not open games.json.");
         }
         json dataJSON = json::parse(f);
         readJson(dataJSON, metaData);
@@ -62,7 +65,6 @@ void setup_server_data() {
         cosineSim = cosineSimilarity(indexedTags);
         cosineSim.createGameSignatures(metaData);
 
-        // Corrected line
         minHashObj = minHash(150, indexedTags);
 
     } catch (const exception& e) {
@@ -343,7 +345,6 @@ crow::response minhash_api(const crow::request& req) {
         return crow::response(404, "Game not found.");
     }
 
-    // MinHash is now created inside the function to ensure fresh randomization for each request.
     minHash mh(150, indexedTags);
 
     unordered_map<string, vector<int>> allSignatures;
@@ -515,6 +516,6 @@ int main() {
       (decision_tree_api);
 
     printLinks();
-    app.port(18080).multithreaded().run();
+    app.port(8081).multithreaded().run();
     return 0;
 }
