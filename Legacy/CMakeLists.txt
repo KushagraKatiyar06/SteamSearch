@@ -5,6 +5,17 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(MINGW)
+    add_link_options("-Wl,--strip-all")
+    add_link_options("-Wl,--allow-multiple-definition")
+
+    add_compile_options("-fno-asynchronous-unwind-tables")
+endif()
+
+if(WIN32)
+    add_compile_options(-mcmodel=medium)
+    add_link_options(-mcmodel=medium)
+endif()
 
 include(FetchContent)
 
