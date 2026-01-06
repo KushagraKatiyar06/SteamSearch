@@ -1,35 +1,39 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { useEffect, useRef } from 'react' // Added useRef and useEffect
+import SteamSearchMain from './assets/steamsearch_main.svg'
+import enter from './assets/enter.svg'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+    const secondFoldRef = useRef(null);
+    const scrollToSecondFold = () => {
+        secondFoldRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') scrollToSecondFold();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    return (
+        <div className="app-container">
+            <section className="first-fold">
+                <div className="hero">
+                    <img src={SteamSearchMain} className="SteamSearchMain" alt="Steam_Search_Main"/>
+                </div>
+
+                <div className="continuePrompt" onClick={scrollToSecondFold}>
+                    <img src={enter} className="enter" alt="enter"/>
+                    <p className="pressEnter">Press enter to continue</p>
+                </div>
+            </section>
+
+            <section className="second-fold" ref={secondFoldRef}>
+
+            </section>
+        </div>
+    );
 }
 
-export default App
+export default App;
