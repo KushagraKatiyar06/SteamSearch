@@ -15,7 +15,6 @@
 using json = nlohmann::json;
 
 // string interning technique -> reduces ram overhead from 2gb to less than 50mb
-
 // string pool contains unique strings from game data... stringCache converts it to a numerical value
 
 //addToPool
@@ -77,7 +76,6 @@ void setupMinHash() {
 
 void runConversion() {
     setupMinHash();
-
     std::ifstream f("data/games.json");
     json data = json::parse(f);
     std::vector<CompactGame> games;
@@ -86,17 +84,18 @@ void runConversion() {
 
     for (auto& [id_str, info] : data.items()) {
         CompactGame cg = {};
-        cg.id = std::stoi(id_str);
+        cg.id = std::stoul(id_str);
 
+        // Basic Stats
         int pos = info.value("positive", 0);
         int neg = info.value("negative", 0);
         cg.reviewScore = (pos + neg == 0) ? -1.0f : (float)pos / (pos + neg);
         cg.price = info.value("price", 0.0f);
         cg.metacriticScore = info.value("metacritic_score", -1);
 
+        // String Offsets
         cg.nameOffset = addToPool(info.value("name", ""));
         cg.imageUrlOffset = addToPool(info.value("header_image", ""));
-
 
         auto devs = info.value("developer", json::array());
         cg.developerOffset = addToPool(devs.empty() ? "" : devs[0].get<std::string>());
@@ -111,9 +110,7 @@ void runConversion() {
         }
         cg.genresOffset = addToPool(genreStr);
 
-
-
-        //  MinHash & Cosine Signature Generation
+        // Tag Processing for Jaccard, Cosine, and MinHash
         auto gameTags = info.value("tags", json::object());
         std::vector<int> currentTagIndices;
 
@@ -122,21 +119,27 @@ void runConversion() {
                 int idx = tagToIndex[tagName];
                 currentTagIndices.push_back(idx);
 
+                // Exact Jaccard Bits
+                if (idx < 256) {
+                    cg.tagBits[idx / 32] |= (1U << (idx % 32));
+                }
+
+                //  Cosine Signature
                 uint32_t bucket = std::hash<int>{}(idx) % 128;
                 cg.cosineSignature[bucket] += static_cast<float>(count.get<int>());
             }
         }
 
+        // MinHash Signature
         for (int i = 0; i < 150; i++) {
             int minVal = 999999;
             for (int tagIdx : currentTagIndices) {
-                if (hashCombinations[i][tagIdx] < minVal) {
-                    minVal = hashCombinations[i][tagIdx];
-                }
+                if (hashCombinations[i][tagIdx] < minVal) minVal = hashCombinations[i][tagIdx];
             }
             cg.minHashSignature[i] = (currentTagIndices.empty()) ? 0 : minVal;
         }
 
+        // Cosine Normalization
         float sumSq = 0;
         for (int i = 0; i < 128; i++) sumSq += cg.cosineSignature[i] * cg.cosineSignature[i];
         if (sumSq > 0) {
@@ -147,11 +150,10 @@ void runConversion() {
         games.push_back(cg);
     }
 
-    //  Final Binary Export
     std::ofstream outGames("data/games.bin", std::ios::binary);
     outGames.write(reinterpret_cast<const char*>(games.data()), games.size() * sizeof(CompactGame));
 
-    std::ofstream outStrings("/data/strings.bin", std::ios::binary);
+    std::ofstream outStrings("data/strings.bin", std::ios::binary);
     outStrings.write(stringPool.data(), stringPool.size());
 
     std::cout << "Successfully converted " << games.size() << " games." << std::endl;
@@ -171,7 +173,7 @@ void verifyConversion() {
 }
 
 int main() {
-    //runConversion();
+    runConversion();
     verifyConversion();
     return 0;
 }

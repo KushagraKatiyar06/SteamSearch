@@ -12,6 +12,7 @@ struct CompactGame {
     int16_t metacriticScore;
     float price;
 
+    uint32_t tagBits[8];
     uint32_t minHashSignature[150];
     float cosineSignature[128];
 
