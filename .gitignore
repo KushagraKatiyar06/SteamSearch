@@ -1,5 +1,3 @@
 .idea/
 cmake-build-debug/
-games.json
-games_half.json
-games_less.json
+data/games.json

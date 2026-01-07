@@ -1,0 +1,40 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Imprima&family=Sansation:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+body {
+  font-family: 'Sansation', sans-serif;
+  font-size: 1.6rem;
+  line-height: 1.5;
+  background-image: linear-gradient(rgba(27, 40, 56, 1), rgba(42, 71, 94, 1));
+  overflow-x: hidden;
+}
+
+html, body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+
+.error-text {
+  color: #ff4d4d;
+  font-family: 'Imprima', sans-serif;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}

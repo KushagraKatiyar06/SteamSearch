@@ -1,0 +1,490 @@
+#root {
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.app-container{
+  overflow-y: auto;
+  height: 100vh;
+  width: 100%;
+  scroll-behavior: smooth;
+
+  -ms-overflow-style: none;
+  scrollbar-width: none
+}
+
+.app-container::-webkit-scrollbar {
+  display: none;
+}
+
+.first-fold, .second-fold {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.first-fold {
+  justify-content: space-around;
+  padding: 4rem 0;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.SteamSearchMain {
+  width: 22rem;
+  height: auto;
+}
+
+.continuePrompt {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+  align-self: center;
+
+  padding-right: 1.75rem;
+
+  transition: transform 0.3s ease, filter 0.3s ease;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.0));
+  cursor: pointer;
+}
+
+.enter {
+  width: 1.75rem;
+  height: auto;
+}
+
+.pressEnter {
+  font-size: 1.5rem;
+  color: white;
+  font-weight: 0;
+}
+
+.continuePrompt:hover{
+  transform: scale(1.05);
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+}
+
+.second-fold {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  padding-bottom: 5rem;
+}
+
+.callToAction{
+  margin-top: 10rem;
+  margin-bottom: 4rem;
+  margin-right: 6rem;
+  color: white;
+  font-size: 2.5rem;
+  max-width: 47rem;
+  text-align: left;
+}
+
+.highlight{
+  color: #66c0f4;
+}
+
+.searchbar_container{
+  margin-top: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.searchbar {
+  height: 3rem;
+  width: 45rem;
+  background: rgba(0,0,0,0);
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+  padding-left: 0.6rem;
+  font-family: 'Sansation', sans-serif;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.searchbar:focus {
+  outline: none;
+  border-color: #66c0f4;
+}
+
+.searchGlass {
+  height: 5rem;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.searchGlass:hover{
+  transform: scale(1.05) rotate(-15deg);
+}
+
+.filters_container{
+  display: flex;
+  flex-direction: row;
+  margin-right: 5rem;
+  margin-top: 1rem;
+}
+
+.algorithm {
+  font-size: 1rem;
+  padding: 0.5rem;
+  width: 7rem;
+  border: solid;
+  border-width: 0.1rem;
+  border-color: #ffffff;
+  color: #ffffff;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+  margin: 0 0.1rem;
+
+  margin-left: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.algorithm.active {
+  border-color: #66c0f4;
+  color: #66c0f4;
+  background: rgba(102, 192, 244, 0.1);
+}
+
+.algorithm:hover:not(.active){
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search_section {
+  position: relative;
+  z-index: 1;
+}
+
+.search_results_dropdown {
+  position: absolute;
+  top: 4rem;
+  left: 0;
+  width: 45rem;
+  background: rgba(27, 40, 56, 0.95);
+  border: 1px solid white;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
+}
+
+.search_result_item {
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.search_result_item:hover {
+  background: rgba(102, 192, 244, 0.2);
+}
+
+.search_result_item img {
+  width: 175px;
+  height: auto;
+  border: solid;
+  border-width: 0.1rem;
+  border-color: white;
+}
+
+.results_display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 95%;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.selected_game_card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+
+  gap: 1rem;
+  padding-bottom: 1rem;
+  min-height: 20rem;
+  max-height: 20rem;
+}
+
+.gameImage_selected {
+  width: 90%;
+  border-radius: 20px;
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+
+  align-self: center;
+  margin-top: 1.25rem;
+}
+
+.gameName_selected {
+  font-size: 1.75rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  max-width: 22rem;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 90%;
+}
+
+.stats_container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  margin-top: 1rem;
+}
+
+.stat_item {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem
+}
+
+.algo_logo{
+  height: 2.5rem;
+  margin-top: -0.25rem;
+}
+
+.algorithm_text{
+  font-size: 1.25rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  max-width: 25rem;
+}
+
+.stopwatch {
+  height: 2.75rem;
+}
+
+.time {
+  font-size: 1.25rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  margin-bottom: 0.25rem;
+}
+
+.game_grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-height: none;
+  width: 90%;
+  animation: slideUpFade 0.6s ease-out forwards;
+
+  justify-content: center;
+  justify-items: center;
+  margin: 0 auto;
+}
+
+.recommendation_card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+  cursor: pointer;
+
+  width: 100%;
+  max-width: 25rem;
+
+  gap: 1rem;
+  padding-bottom: 1rem;
+  min-height: 20rem;
+  max-height: 20rem;
+  max-width: 30rem;
+}
+
+.recommendation_card:hover {
+  border-color: #66c0f4;
+  background: rgba(102, 192, 244, 0.05);
+}
+
+.gameImage_recomendation {
+  width: 90%;
+  border-radius: 20px;
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+
+  align-self: center;
+  margin-top: 1.25rem;
+}
+
+.gameName_recomendation {
+  font-size: 1.75rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  max-width: 22rem;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 90%;
+}
+
+.pagination_footer {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  color: white;
+  font-size: 1.5rem;
+  margin-top: 3.5rem;
+  margin-bottom: 2rem;
+}
+
+.pagination_footer button {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.steam {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  height: 4rem;
+  width: auto;
+}
+
+.gaminggraphic {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: clamp(300px, 40vw, 600px);
+  height: auto;
+  z-index: -1;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  background: #1b2838;
+  padding: 2rem;
+  width: 500px;
+  max-height: 85vh;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #66c0f4;
+}
+
+.scroll-area {
+  overflow-y: auto;
+  margin-top: 1rem;
+  padding-right: 10px;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 2px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background: #66c0f4;
+  border-radius: 10px;
+}
+
+.viz-box {
+  margin-bottom: 3rem;
+  display: flex; flex-direction: column; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 1rem;
+  color: white;
+}
+
+.venn-diag {
+  position: relative;
+  width: 150px; height: 100px;
+  margin: 1rem 0;
+}
+
+.venn-circle {
+  position: absolute; width: 80px; height: 80px;
+  border-radius: 50%; border: 2px solid white;
+  display: flex; align-items: center; justify-content: center; font-size: 0.7rem;
+}
+
+.venn-circle.left { left: 0; background: rgba(255,255,255,0.1); }
+.venn-circle.right { right: 0; background: rgba(102, 192, 244, 0.2); border-color: #66c0f4; }
+
+.sig-strip {
+  display: grid; grid-template-columns: repeat(30, 1fr);
+  gap: 2px; margin: 1rem 0;
+}
+
+.sig-pixel { width: 8px; height: 8px; background: #333; }
+.sig-pixel.match { background: #66c0f4; box-shadow: 0 0 5px #66c0f4; }
+
+.stat-text { color: #66c0f4; font-size: 0.9rem; margin-top: 0.5rem; }
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

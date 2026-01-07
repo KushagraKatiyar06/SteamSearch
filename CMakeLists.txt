@@ -2,69 +2,28 @@ cmake_minimum_required(VERSION 3.22)
 project(SteamSearch)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
 include(FetchContent)
 
 # nlohmann_json
-FetchContent_Declare(
-        json
-        URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
-)
+FetchContent_Declare(json URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz)
 FetchContent_MakeAvailable(json)
 
-# RapidFuzz C++
-FetchContent_Declare(
-        rapidfuzz
-        GIT_REPOSITORY https://github.com/rapidfuzz/rapidfuzz-cpp.git
-        GIT_TAG main
-)
-FetchContent_MakeAvailable(rapidfuzz)
+# Crow and Asio
+set(ASIO_INCLUDE_DIR "C:/vcpkg/installed/x64-mingw-static/include")
+set(Crow_DIR "C:/vcpkg/installed/x64-mingw-static/share/crow")
 
-# Asio (header-only, cross-platform)
-FetchContent_Declare(
-        asio
-        GIT_REPOSITORY https://github.com/chriskohlhoff/asio.git
-        GIT_TAG asio-1-27-0
-)
-FetchContent_MakeAvailable(asio)
-
-# Crow
+list(APPEND CMAKE_PREFIX_PATH "C:/vcpkg/installed/x64-mingw-static")
 find_package(Crow CONFIG REQUIRED)
 
+add_executable(data_converter src/converter.cpp)
+target_link_libraries(data_converter
+        nlohmann_json::nlohmann_json)
 
-add_executable(SteamSearch
-        main.cpp
-        Game.h
-        Game.cpp
-        readJson.h
-        readJson.cpp
-        jaccardsSimilarity.h
-        jaccardsSimilarity.cpp
-        minHash.h
-        minHash.cpp
-        cosineSimilarity.h
-        cosineSimilarity.cpp
-        multiFeatureSimilarity.h
-        multiFeatureSimilarity.cpp
-        algorithms_B.h
-        algorithms_B.cpp
-        RapidFuzzie.h
-        RapidFuzzie.cpp
-        main.cpp
-)
-
-
-target_link_libraries(SteamSearch PRIVATE
+add_executable(steam_server src/mainServer.cpp)
+target_link_libraries(steam_server
         Crow::Crow
         nlohmann_json::nlohmann_json
-        rapidfuzz::rapidfuzz
-        asio::asio
-)
-
-
-if(WIN32)
-    target_link_libraries(SteamSearch PRIVATE Ws2_32 Mswsock)
-endif()
+        ws2_32
+        mswsock)
