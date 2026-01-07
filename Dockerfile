@@ -17,6 +17,7 @@ RUN git clone https://github.com/CrowCpp/Crow.git /tmp/crow && \
 WORKDIR /app
 
 COPY . .
+RUN git lfs install && git lfs pull
 
 RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
     cmake --build build --target steam_server
