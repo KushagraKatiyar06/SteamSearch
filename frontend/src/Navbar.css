@@ -4,9 +4,11 @@
 }
 
 .navbar {
+    opacity: 0;
+
     margin-top: 2rem;
     display: flex;
-    /* Removed gap: 5rem because space-between handles spacing */
+
     background-color: #1b2838;
     border-radius: 20px;
     border: solid;
@@ -27,7 +29,6 @@
     display: flex;
     flex-direction: row;
     gap: 2.5rem;
-    /* Fixed clamp syntax: min, preferred (vw), max */
     font-size: clamp(1.2rem, 2vw, 1.75rem);
     color: white;
 }

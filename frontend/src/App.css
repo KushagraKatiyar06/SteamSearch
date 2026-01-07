@@ -83,12 +83,13 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  overflow: hidden;
+  overflow-y: auto;
+  padding-bottom: 5rem;
 }
 
 .callToAction{
-  margin-top: 10rem;
-  margin-right: 3rem;
+  margin-bottom: 4rem;
+  margin-right: 6rem;
   color: white;
   font-size: 2.5rem;
   max-width: 47rem;
@@ -100,8 +101,8 @@
 }
 
 .searchbar_container{
-  margin-top: 2rem;
-  margin-left: 3rem;
+  margin-top: -2rem;
+  margin-left: 0rem;
   display: flex;
   flex-direction: row;
   gap: 1rem;
@@ -166,6 +167,112 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
+.search_results_dropdown {
+  position: absolute;
+  top: 22rem;
+  width: 45rem;
+  margin-right: 5rem;
+  background: rgba(27, 40, 56, 0.95);
+  border: 1px solid white;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search_result_item {
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.search_result_item:hover {
+  background: rgba(102, 192, 244, 0.2);
+}
+
+.search_result_item img {
+  width: 175px;
+  height: auto;
+  border: solid;
+  border-width: 0.1rem;
+  border-color: white;
+}
+
+.results_display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 95%;
+  margin-top: 3rem;
+}
+
+.selected_game_card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+
+  gap: 1rem;
+  padding-bottom: 1rem;
+
+}
+
+.gameImage_selected {
+  width: 90%;
+  border-radius: 20px;
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+
+  align-self: center;
+  margin-top: 1.25rem;
+}
+
+.gameName_selected {
+  font-size: 2rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+}
+
+.stats_container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.game_grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.pagination_footer {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.pagination_footer button {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
 .steam {
   position: absolute;
   bottom: 2rem;
@@ -181,35 +288,6 @@
   width: clamp(300px, 40vw, 600px);
   height: auto;
   z-index: -1;
-}
-
-.search_results_dropdown {
-  position: absolute;
-  top: 32rem;
-  width: 45rem;
-  background: rgba(27, 40, 56, 0.95);
-  border: 1px solid white;
-  z-index: 100;
-  max-height: 300px;
-  overflow-y: auto;
-}
-
-.search_result_item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.search_result_item:hover {
-  background: rgba(102, 192, 244, 0.2);
-}
-
-.search_result_item img {
-  width: 50px;
-  height: auto;
 }
 
 
