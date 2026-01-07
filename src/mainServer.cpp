@@ -63,24 +63,45 @@ float getCosine(const CompactGame& a, const CompactGame& b) {
     return dot;
 }
 
+
+std::string urlDecode(std::string str) {
+    std::string res;
+    for (size_t i = 0; i < str.length(); ++i) {
+        if (str[i] == '%' && i + 2 < str.length()) {
+            res += (char)std::strtol(str.substr(i + 1, 2).c_str(), nullptr, 16);
+            i += 2;
+        } else if (str[i] == '+') {
+            res += ' ';
+        } else {
+            res += str[i];
+        }
+    }
+    return res;
+}
+
 int main() {
     loadData();
     crow::SimpleApp app;
 
     // Search Route
-    CROW_ROUTE(app, "/search/<string>")
+    CROW_ROUTE(app, "/search/<path>")
     ([&](std::string query) {
+        query = urlDecode(query);
+
+        std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+
         json results = json::array();
         int count = 0;
-        for (const auto& g : globalGames) {
-            std::string gameName = getString(g.nameOffset);
-            auto it = std::search(gameName.begin(), gameName.end(), query.begin(), query.end(),
-                [](char a, char b) { return std::tolower(a) == std::tolower(b); });
 
-            if (it != gameName.end()) {
+        for (const auto& g : globalGames) {
+            std::string name = getString(g.nameOffset);
+            std::string nameLower = name;
+            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+
+            if (nameLower.find(query) != std::string::npos) {
                 results.push_back({
                     {"id", g.id},
-                    {"name", gameName},
+                    {"name", name},
                     {"imageURL", getString(g.imageUrlOffset)}
                 });
                 if (++count >= 15) break;

@@ -30,7 +30,8 @@
 }
 
 .first-fold {
-  gap: 17rem;
+  justify-content: space-around;
+  padding: 4rem 0;
 }
 
 .hero {
@@ -73,5 +74,144 @@
   transform: scale(1.05);
   filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
 }
+
+.second-fold {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.callToAction{
+  margin-top: 10rem;
+  margin-right: 3rem;
+  color: white;
+  font-size: 2.5rem;
+  max-width: 47rem;
+  text-align: left;
+}
+
+.highlight{
+  color: #66c0f4;
+}
+
+.searchbar_container{
+  margin-top: 2rem;
+  margin-left: 3rem;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.searchbar {
+  height: 3rem;
+  width: 45rem;
+  background: rgba(0,0,0,0);
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+  padding-left: 0.6rem;
+  font-family: 'Sansation', sans-serif;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.searchbar:focus {
+  outline: none;
+  border-color: #66c0f4;
+}
+
+.searchGlass {
+  margin-top: -2.5rem;
+  height: 7rem;
+  transition: transform 0.3s ease;
+}
+
+.searchGlass:hover{
+  transform: scale(1.05) rotate(-15deg);
+}
+
+.filters_container{
+  display: flex;
+  flex-direction: row;
+  margin-right: 5rem;
+  margin-top: 1rem;
+}
+
+.algorithm {
+  font-size: 1rem;
+  padding: 0.5rem;
+  width: 7rem;
+  border: solid;
+  border-width: 0.1rem;
+  border-color: white;
+  color: white;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+  margin: 0 0.1rem;
+}
+
+.algorithm.active {
+  border-color: #66c0f4;
+  color: #66c0f4;
+  background: rgba(102, 192, 244, 0.1);
+}
+
+.algorithm:hover:not(.active){
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.steam {
+  position: absolute;
+  bottom: 2rem;
+  left: 2rem;
+  height: 4rem;
+  width: auto;
+}
+
+.gaminggraphic {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: clamp(300px, 40vw, 600px);
+  height: auto;
+  z-index: -1;
+}
+
+.search_results_dropdown {
+  position: absolute;
+  top: 32rem;
+  width: 45rem;
+  background: rgba(27, 40, 56, 0.95);
+  border: 1px solid white;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.search_result_item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.search_result_item:hover {
+  background: rgba(102, 192, 244, 0.2);
+}
+
+.search_result_item img {
+  width: 50px;
+  height: auto;
+}
+
+
 
 

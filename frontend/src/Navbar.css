@@ -1,0 +1,37 @@
+.SteamSearchNavbar{
+    height: 6rem;
+    margin-left: -2rem;
+}
+
+.navbar {
+    margin-top: 2rem;
+    display: flex;
+    /* Removed gap: 5rem because space-between handles spacing */
+    background-color: #1b2838;
+    border-radius: 20px;
+    border: solid;
+    border-color: white;
+    border-width: 0.1rem;
+
+    position: sticky;
+    top: 0;
+    width: 95%;
+
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4rem;
+    z-index: 10;
+}
+
+.navLinks {
+    display: flex;
+    flex-direction: row;
+    gap: 2.5rem;
+    /* Fixed clamp syntax: min, preferred (vw), max */
+    font-size: clamp(1.2rem, 2vw, 1.75rem);
+    color: white;
+}
+
+.recommendations_navbar, .about_navbar{
+    cursor: pointer;
+}

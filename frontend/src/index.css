@@ -12,7 +12,7 @@
 
 body {
   font-family: 'Sansation', sans-serif;
-  font-size: 1.6rem; /* This equals 16px now */
+  font-size: 1.6rem;
   line-height: 1.5;
   background-image: linear-gradient(rgba(27, 40, 56, 1), rgba(42, 71, 94, 1));
   overflow-x: hidden;
