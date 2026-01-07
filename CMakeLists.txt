@@ -6,27 +6,33 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
+# nlohmann_json
 FetchContent_Declare(
         json
         URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE 
 )
 FetchContent_MakeAvailable(json)
 
-find_package(asio REQUIRED)
+find_path(ASIO_INCLUDE_DIR NAMES asio.hpp)
+if(NOT ASIO_INCLUDE_DIR)
+    message(FATAL_ERROR "Asio headers not found. Ensure libasio-dev is installed.")
+endif()
+
+add_library(asio INTERFACE)
+target_include_directories(asio INTERFACE ${ASIO_INCLUDE_DIR})
+target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
+
 find_package(Crow CONFIG REQUIRED)
 
+# Executables
 add_executable(steam_server mainServer.cpp)
-
-find_package(Threads REQUIRED)
 target_link_libraries(steam_server
         PRIVATE
         Crow::Crow
         nlohmann_json::nlohmann_json
+        asio
         Threads::Threads
 )
 
-add_executable(data_converter converter.cpp)
-target_link_libraries(data_converter
-        PRIVATE
-        nlohmann_json::nlohmann_json
-)
+find_package(Threads REQUIRED)
