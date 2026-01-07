@@ -229,7 +229,10 @@ int main() {
         }
     });
 
-    std::cout << "C++ Server online at http://localhost:8080" << std::endl;
-    app.port(8080).multithreaded().run();
+    const char* port = std::getenv("PORT");
+    uint16_t portNum = port ? (uint16_t)std::stoi(port) : 8080;
+
+    std::cout << "C++ Server online on port " << portNum << std::endl;
+    app.port(portNum).multithreaded().run();
     return 0;
 }
