@@ -6,11 +6,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include(FetchContent)
 
-# nlohmann_json
 FetchContent_Declare(
         json
         URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE 
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(json)
 
@@ -25,8 +24,8 @@ target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
 
 find_package(Crow CONFIG REQUIRED)
 
-# Executables
-add_executable(steam_server mainServer.cpp)
+add_executable(steam_server ${CMAKE_CURRENT_SOURCE_DIR}/mainServer.cpp)
+
 target_link_libraries(steam_server
         PRIVATE
         Crow::Crow
