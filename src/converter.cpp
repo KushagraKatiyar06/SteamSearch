@@ -176,7 +176,7 @@ void verifyConversion() {
 }
 
 int main() {
-    //runConversion();
+    runConversion();
     verifyConversion();
     return 0;
 }
