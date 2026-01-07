@@ -22,45 +22,59 @@ const char* getString(uint32_t offset) {
 }
 
 void loadData() {
-    std::cout << "Attempting to load games.bin..." << std::endl;
+    // 1. Load Games Binary
+    std::vector<std::string> gameFiles = {"data/games_1.bin", "data/games_2.bin"};
+    globalGames.clear();
 
-    std::ifstream gFile("data/games.bin", std::ios::binary | std::ios::ate);
+    for (const auto& path : gameFiles) {
+        std::ifstream gFile(path, std::ios::binary | std::ios::ate);
 
-    // Ensure file opened
-    if (!gFile.is_open()) {
-        std::cerr << "CRITICAL ERROR: Could not open data/games.bin! Check if the file is in the 'data' folder." << std::endl;
-        return;
+        if (!gFile.is_open()) {
+            std::cerr << "ERROR: Could not find " << path << "!" << std::endl;
+            continue;
+        }
+
+        std::streamsize gSize = gFile.tellg();
+        gFile.seekg(0, std::ios::beg);
+
+        // Calculate how many games are in this specific file
+        size_t numGamesInFile = gSize / sizeof(CompactGame);
+        size_t currentSize = globalGames.size();
+
+        // Expand the vector and read the data into the new reserved space
+        globalGames.resize(currentSize + numGamesInFile);
+        gFile.read((char*)&globalGames[currentSize], gSize);
+        gFile.close();
+
+        std::cout << "Loaded " << numGamesInFile << " games from " << path << std::endl;
     }
 
-    std::streamsize gSize = gFile.tellg();
+    // 2. Load Strings Binary
+    std::string stringsPath = "data/strings.bin";
+    std::ifstream sFile(stringsPath, std::ios::binary | std::ios::ate);
 
-    // Ensure file is not empty or corrupted
-    if (gSize <= 0) {
-        std::cerr << "CRITICAL ERROR: games.bin is empty or tellg() failed." << std::endl;
-        return;
-    }
-
-    gFile.seekg(0, std::ios::beg);
-
-    // Explicitly print the size for the logs
-    std::cout << "Found games.bin, size: " << gSize << " bytes. Allocating memory..." << std::endl;
-
-    try {
-        globalGames.resize(gSize / sizeof(CompactGame));
-        gFile.read((char*)globalGames.data(), gSize);
-    } catch (const std::bad_alloc& e) {
-        std::cerr << "OUT OF MEMORY ERROR: Allocation failed during games.bin load." << std::endl;
-        return;
-    }
-
-    // Repeat for strings.bin
-    std::ifstream sFile("data/strings.bin", std::ios::binary | std::ios::ate);
     if (!sFile.is_open()) {
-        std::cerr << "CRITICAL ERROR: data/strings.bin not found!" << std::endl;
+        std::cerr << "ERROR: Could not find " << stringsPath << "!" << std::endl;
         return;
     }
 
-    std::cout << "Successfully loaded " << globalGames.size() << " games into RAM." << std::endl;
+    std::streamsize sSize = sFile.tellg();
+    sFile.seekg(0, std::ios::beg);
+    globalStringPool.resize(sSize);
+    sFile.read(globalStringPool.data(), sSize);
+    sFile.close();
+
+    // 3. Status and Data Verification
+    std::cout << "Successfully loaded total of " << globalGames.size() << " games into RAM." << std::endl;
+    std::cout << "Successfully loaded " << sSize << " bytes into String Pool." << std::endl;
+
+    std::cout << "--- Data Verification (First 5 Games) ---" << std::endl;
+    for (int i = 0; i < std::min((int)globalGames.size(), 5); i++) {
+        const char* name = getString(globalGames[i].nameOffset);
+        std::cout << "Index " << i << " | ID: " << globalGames[i].id
+                  << " | Name: [" << (name ? name : "NULL") << "]" << std::endl;
+    }
+    std::cout << "-----------------------------------------" << std::endl;
 }
 
 // Jaccard's Tag Similarity
@@ -113,32 +127,27 @@ int main() {
     CROW_ROUTE(app, "/search/<path>")
     ([&](std::string query) {
         query = urlDecode(query);
+    std::transform(query.begin(), query.end(), query.begin(), ::tolower);
 
-        std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+    std::cout << "Searching for: [" << query << "]" << std::endl;
 
-        json results = json::array();
-        int count = 0;
+    json results = json::array();
+    int count = 0;
 
-        for (const auto& g : globalGames) {
-            std::string name = getString(g.nameOffset);
-            std::string nameLower = name;
-            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+    for (const auto& g : globalGames) {
+        std::string name = getString(g.nameOffset);
+        std::string nameLower = name;
+        std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
 
-            if (nameLower.find(query) != std::string::npos) {
-                // Fixed minHash array construction
-                json mHash = json::array();
-                for(int i = 0; i < 150; i++) mHash.push_back(g.minHashSignature[i]);
-
-                results.push_back({
-                    {"id", g.id},
-                    {"name", name},
-                    {"imageURL", getString(g.imageUrlOffset)},
-                    {"tagBits", {g.tagBits[0], g.tagBits[1], g.tagBits[2], g.tagBits[3], g.tagBits[4], g.tagBits[5], g.tagBits[6], g.tagBits[7]}},
-                    {"minHash", mHash}
-                });
-                if (++count >= 15) break;
-            }
+        if (nameLower.find(query) != std::string::npos) {
+            results.push_back({
+                {"id", g.id},
+                {"name", name},
+                {"imageURL", getString(g.imageUrlOffset)}
+            });
+            if (++count >= 15) break;
         }
+    }
         auto response = crow::response(results.dump());
         response.add_header("Access-Control-Allow-Origin", "*");
         response.add_header("Content-Type", "application/json; charset=utf-8");

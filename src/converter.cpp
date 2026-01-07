@@ -1,7 +1,3 @@
-//
-// Created by kkati on 1/5/2026.
-//
-
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -14,14 +10,11 @@
 
 using json = nlohmann::json;
 
-// string interning technique -> reduces ram overhead from 2gb to less than 50mb
-// string pool contains unique strings from game data... stringCache converts it to a numerical value
-
-//addToPool
+// string interning technique
 std::vector<char> stringPool;
 std::unordered_map<std::string, uint32_t> stringCache;
 
-//setupMinHash
+// setupMinHash
 std::unordered_map<std::string, int> tagToIndex;
 std::vector<std::vector<int>> hashCombinations;
 
@@ -30,13 +23,11 @@ uint32_t addToPool(const std::string& str) {
         return 0;
     }
 
-    // if a string is not already in the map, we take second element of the iterator (key -> value)
     auto it = stringCache.find(str);
     if (it != stringCache.end()) {
         return it->second;
     }
 
-    // the offset is the current size to keep track of where the new strings start in the continuous memory
     uint32_t offset = static_cast<uint32_t>(stringPool.size());
     for (char c: str) {
         stringPool.push_back(c);
@@ -47,25 +38,22 @@ uint32_t addToPool(const std::string& str) {
     return offset;
 }
 
-// creates signatures for minhash algorithm
 void setupMinHash() {
     std::ifstream tagFile("data/tags.txt");
     std::string line;
     int tagCount = 0;
 
     while (std::getline(tagFile, line)) {
-        if (!line.empty()) { // Fixed: process if NOT empty
+        if (!line.empty()) {
             tagToIndex[line] = tagCount++;
         }
     }
 
-    //  base indices
     std::vector<int> baseIndices(tagCount);
     for (int i = 0; i < tagCount; i++) {
         baseIndices[i] = i;
     }
 
-    // Shuffle the base indices 150 times
     std::mt19937 g(42);
     for (int i = 0; i < 150; i++) {
         std::vector<int> shuffled = baseIndices;
@@ -78,7 +66,12 @@ void runConversion() {
     setupMinHash();
     std::ifstream f("data/games.json");
     json data = json::parse(f);
-    std::vector<CompactGame> games;
+    
+    // Open two separate binary files for games
+    std::ofstream out1("data/games_1.bin", std::ios::binary);
+    std::ofstream out2("data/games_2.bin", std::ios::binary);
+    
+    int totalProcessed = 0;
 
     if (stringPool.empty()) stringPool.push_back('\0');
 
@@ -86,14 +79,12 @@ void runConversion() {
         CompactGame cg = {};
         cg.id = std::stoul(id_str);
 
-        // Basic Stats
         int pos = info.value("positive", 0);
         int neg = info.value("negative", 0);
         cg.reviewScore = (pos + neg == 0) ? -1.0f : (float)pos / (pos + neg);
         cg.price = info.value("price", 0.0f);
         cg.metacriticScore = info.value("metacritic_score", -1);
 
-        // String Offsets
         cg.nameOffset = addToPool(info.value("name", ""));
         cg.imageUrlOffset = addToPool(info.value("header_image", ""));
 
@@ -110,7 +101,6 @@ void runConversion() {
         }
         cg.genresOffset = addToPool(genreStr);
 
-        // Tag Processing for Jaccard, Cosine, and MinHash
         auto gameTags = info.value("tags", json::object());
         std::vector<int> currentTagIndices;
 
@@ -119,18 +109,15 @@ void runConversion() {
                 int idx = tagToIndex[tagName];
                 currentTagIndices.push_back(idx);
 
-                // Exact Jaccard Bits
                 if (idx < 256) {
                     cg.tagBits[idx / 32] |= (1U << (idx % 32));
                 }
 
-                //  Cosine Signature
                 uint32_t bucket = std::hash<int>{}(idx) % 128;
                 cg.cosineSignature[bucket] += static_cast<float>(count.get<int>());
             }
         }
 
-        // MinHash Signature
         for (int i = 0; i < 150; i++) {
             int minVal = 999999;
             for (int tagIdx : currentTagIndices) {
@@ -139,7 +126,6 @@ void runConversion() {
             cg.minHashSignature[i] = (currentTagIndices.empty()) ? 0 : minVal;
         }
 
-        // Cosine Normalization
         float sumSq = 0;
         for (int i = 0; i < 128; i++) sumSq += cg.cosineSignature[i] * cg.cosineSignature[i];
         if (sumSq > 0) {
@@ -147,36 +133,50 @@ void runConversion() {
             for (int i = 0; i < 128; i++) cg.cosineSignature[i] *= invRoot;
         }
 
-        games.push_back(cg);
+        // 55,000 games
+        if (totalProcessed < 55000) {
+            out1.write(reinterpret_cast<const char*>(&cg), sizeof(CompactGame));
+        } else {
+            out2.write(reinterpret_cast<const char*>(&cg), sizeof(CompactGame));
+        }
+
+        totalProcessed++;
     }
 
-    std::ofstream outGames("data/games.bin", std::ios::binary);
-    outGames.write(reinterpret_cast<const char*>(games.data()), games.size() * sizeof(CompactGame));
+    out1.close();
+    out2.close();
 
     std::ofstream outStrings("data/strings.bin", std::ios::binary);
     outStrings.write(stringPool.data(), stringPool.size());
+    outStrings.close();
 
-    std::cout << "Successfully converted " << games.size() << " games." << std::endl;
+    std::cout << "Successfully converted " << totalProcessed << " games." << std::endl;
+    std::cout << "Data split into games_1.bin and games_2.bin" << std::endl;
 }
 
 void verifyConversion() {
-    std::ifstream in("data/games.bin", std::ios::binary);
-    CompactGame testGame;
-
-    in.read(reinterpret_cast<char*>(&testGame), sizeof(CompactGame));
+    auto checkFile = [](std::string path) {
+        std::ifstream in(path, std::ios::binary | std::ios::ate);
+        if (!in.is_open()) {
+            std::cout << "Failed to open " << path << std::endl;
+            return;
+        }
+        std::streamsize size = in.tellg();
+        in.seekg(0, std::ios::beg);
+        
+        CompactGame test;
+        in.read(reinterpret_cast<char*>(&test), sizeof(CompactGame));
+        
+        std::cout << "File: " << path << " | Size: " << size << " bytes | First Game ID: " << test.id <<  std::endl;
+    };
 
     std::cout << "\n--- Verification ---" << std::endl;
-    std::cout << "ID: " << testGame.id << std::endl;
-    std::cout << "Review Score: " << testGame.reviewScore << std::endl;
-    std::cout << "Price: " << testGame.price << std::endl;
-
+    checkFile("data/games_1.bin");
+    checkFile("data/games_2.bin");
 }
 
 int main() {
-    runConversion();
+    //runConversion();
     verifyConversion();
     return 0;
 }
-
-
-
