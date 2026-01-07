@@ -22,7 +22,15 @@ const char* getString(uint32_t offset) {
 }
 
 void loadData() {
+    std::cout << "Attempting to load games.bin..." << std::endl;
+
     std::ifstream gFile("data/games.bin", std::ios::binary | std::ios::ate);
+
+    if (!gFile.is_open()) {
+        std::cerr << "CRITICAL ERROR: Could not open data/games.bin" << std::endl;
+        exit(1);
+    }
+    
     std::streamsize gSize = gFile.tellg();
     gFile.seekg(0, std::ios::beg);
     globalGames.resize(gSize / sizeof(CompactGame));
@@ -34,7 +42,7 @@ void loadData() {
     globalStringPool.resize(sSize);
     sFile.read(globalStringPool.data(), sSize);
 
-    std::cout << "Successfully loaded " << globalGames.size() << " games into RAM." << std::endl;
+    std::cout << "Successfully loaded " << globalGames.size() << " games." << std::endl;
 }
 
 // Jaccard's Tag Similarity
