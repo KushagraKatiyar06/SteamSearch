@@ -26,23 +26,41 @@ void loadData() {
 
     std::ifstream gFile("data/games.bin", std::ios::binary | std::ios::ate);
 
+    // Ensure file opened
     if (!gFile.is_open()) {
-        std::cerr << "CRITICAL ERROR: Could not open data/games.bin" << std::endl;
-        exit(1);
+        std::cerr << "CRITICAL ERROR: Could not open data/games.bin! Check if the file is in the 'data' folder." << std::endl;
+        return;
     }
-    
+
     std::streamsize gSize = gFile.tellg();
+
+    // Ensure file is not empty or corrupted
+    if (gSize <= 0) {
+        std::cerr << "CRITICAL ERROR: games.bin is empty or tellg() failed." << std::endl;
+        return;
+    }
+
     gFile.seekg(0, std::ios::beg);
-    globalGames.resize(gSize / sizeof(CompactGame));
-    gFile.read((char*)globalGames.data(), gSize);
 
+    // Explicitly print the size for the logs
+    std::cout << "Found games.bin, size: " << gSize << " bytes. Allocating memory..." << std::endl;
+
+    try {
+        globalGames.resize(gSize / sizeof(CompactGame));
+        gFile.read((char*)globalGames.data(), gSize);
+    } catch (const std::bad_alloc& e) {
+        std::cerr << "OUT OF MEMORY ERROR: Allocation failed during games.bin load." << std::endl;
+        return;
+    }
+
+    // Repeat for strings.bin
     std::ifstream sFile("data/strings.bin", std::ios::binary | std::ios::ate);
-    std::streamsize sSize = sFile.tellg();
-    sFile.seekg(0, std::ios::beg);
-    globalStringPool.resize(sSize);
-    sFile.read(globalStringPool.data(), sSize);
+    if (!sFile.is_open()) {
+        std::cerr << "CRITICAL ERROR: data/strings.bin not found!" << std::endl;
+        return;
+    }
 
-    std::cout << "Successfully loaded " << globalGames.size() << " games." << std::endl;
+    std::cout << "Successfully loaded " << globalGames.size() << " games into RAM." << std::endl;
 }
 
 // Jaccard's Tag Similarity
