@@ -23,8 +23,9 @@ target_include_directories(asio INTERFACE ${ASIO_INCLUDE_DIR})
 target_compile_definitions(asio INTERFACE ASIO_STANDALONE)
 
 find_package(Crow CONFIG REQUIRED)
+find_package(Threads REQUIRED)
 
-add_executable(steam_server ${CMAKE_CURRENT_SOURCE_DIR}/mainServer.cpp)
+add_executable(steam_server src/mainServer.cpp)
 
 target_link_libraries(steam_server
         PRIVATE
@@ -33,5 +34,3 @@ target_link_libraries(steam_server
         asio
         Threads::Threads
 )
-
-find_package(Threads REQUIRED)

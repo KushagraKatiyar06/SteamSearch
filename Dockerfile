@@ -18,9 +18,8 @@ WORKDIR /app
 
 COPY . .
 
-RUN mkdir build && cd build && \
-    cmake .. -DCMAKE_BUILD_TYPE=Release && \
-    make steam_server
+RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
+    cmake --build build --target steam_server
 
 EXPOSE 8080
 
