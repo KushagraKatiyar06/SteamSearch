@@ -138,7 +138,7 @@ int main() {
         std::sort(results.rbegin(), results.rend());
 
         json res = json::array();
-        for (int i = 0; i < std::min((int)results.size(), 10); i++) {
+        for (int i = 0; i < std::min((int)results.size(), 90); i++) {
             const auto& g = globalGames[results[i].second];
             res.push_back({
                 {"id", g.id},
@@ -180,7 +180,7 @@ int main() {
         std::sort(results.rbegin(), results.rend());
 
         json res = json::array();
-        for (int i = 0; i < std::min((int)results.size(), 10); i++) {
+        for (int i = 0; i < std::min((int)results.size(), 90); i++) {
             const auto& g = globalGames[results[i].second];
             res.push_back({
                 {"id", g.id},

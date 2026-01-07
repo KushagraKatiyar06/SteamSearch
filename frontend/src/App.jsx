@@ -130,12 +130,12 @@ function App() {
 
                         <div className="stats_container">
                             <div className="stat_item">
-                                <img src={AlgorithmIcon} alt="algo" />
-                                <p>{activeAlgorithm}</p>
+                                <img className = "algo_logo" src={AlgorithmIcon} alt="algo" />
+                                <p className = "algorithm_text">{activeAlgorithm}</p>
                             </div>
                             <div className="stat_item">
-                                <img src={StopwatchIcon} alt="timer" />
-                                <p>{search_time}ms</p>
+                                <img className = "stopwatch" src={StopwatchIcon} alt="timer" />
+                                <p className = "time">{search_time}ms</p>
                             </div>
                         </div>
 
@@ -158,8 +158,8 @@ function App() {
 
                 {!selected_game && (
                     <>
-                        <img src={Steam} className="steam" alt="steam"/>
-                        <img src={Graphic} className="gaminggraphic" alt="graphic" />
+                        <img src={Steam} className="gameImage_recomendation" alt="image"/>
+                        <img src={Graphic} className="gameName_recomendation" alt="name" />
                     </>
                 )}
             </section>
