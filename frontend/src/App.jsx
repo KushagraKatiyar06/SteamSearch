@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import SteamSearchMain from './assets/steamsearch_main.svg'
 import enter from './assets/enter.svg'
 import './App.css'
-import Navbar from './Navbar'
 import SearchGlass from './assets/searchglass.svg'
 import Steam from './assets/steam.svg'
 import Graphic from './assets/gaminggraphic.svg'
@@ -99,8 +98,6 @@ function App() {
 
             {/* Second Fold */}
             <section className="second-fold" ref={secondFoldRef}>
-                <Navbar />
-
                 {!selected_game && (
                     <p className="callToAction">
                         <span className="highlight"> Search </span> across 100,000 games by entering a title below.
