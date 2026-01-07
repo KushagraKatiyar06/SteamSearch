@@ -99,10 +99,16 @@ int main() {
             std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
 
             if (nameLower.find(query) != std::string::npos) {
+                // Fixed minHash array construction
+                json mHash = json::array();
+                for(int i = 0; i < 150; i++) mHash.push_back(g.minHashSignature[i]);
+
                 results.push_back({
                     {"id", g.id},
                     {"name", name},
-                    {"imageURL", getString(g.imageUrlOffset)}
+                    {"imageURL", getString(g.imageUrlOffset)},
+                    {"tagBits", {g.tagBits[0], g.tagBits[1], g.tagBits[2], g.tagBits[3], g.tagBits[4], g.tagBits[5], g.tagBits[6], g.tagBits[7]}},
+                    {"minHash", mHash}
                 });
                 if (++count >= 15) break;
             }
@@ -140,13 +146,19 @@ int main() {
         json res = json::array();
         for (int i = 0; i < std::min((int)results.size(), 90); i++) {
             const auto& g = globalGames[results[i].second];
+
+            json mHash = json::array();
+            for(int j = 0; j < 150; j++) mHash.push_back(g.minHashSignature[j]);
+
             res.push_back({
                 {"id", g.id},
                 {"name", getString(g.nameOffset)},
                 {"score", roundToTwo(results[i].first)},
                 {"imageURL", getString(g.imageUrlOffset)},
                 {"price", roundToTwo(g.price)},
-                {"algorithm", "global_weighted"}
+                {"algorithm", "global_weighted"},
+                {"tagBits", {g.tagBits[0], g.tagBits[1], g.tagBits[2], g.tagBits[3], g.tagBits[4], g.tagBits[5], g.tagBits[6], g.tagBits[7]}},
+                {"minHash", mHash}
             });
         }
         auto response = crow::response(res.dump());
@@ -182,12 +194,18 @@ int main() {
         json res = json::array();
         for (int i = 0; i < std::min((int)results.size(), 90); i++) {
             const auto& g = globalGames[results[i].second];
+
+            json mHash = json::array();
+            for(int j = 0; j < 150; j++) mHash.push_back(g.minHashSignature[j]);
+
             res.push_back({
                 {"id", g.id},
                 {"name", getString(g.nameOffset)},
                 {"imageURL", getString(g.imageUrlOffset)},
                 {"score", roundToTwo(results[i].first)},
-                {"price", roundToTwo(g.price)}
+                {"price", roundToTwo(g.price)},
+                {"tagBits", {g.tagBits[0], g.tagBits[1], g.tagBits[2], g.tagBits[3], g.tagBits[4], g.tagBits[5], g.tagBits[6], g.tagBits[7]}},
+                {"minHash", mHash}
             });
         }
         auto response = crow::response(res.dump());

@@ -8,6 +8,61 @@ import Graphic from './assets/gaminggraphic.svg'
 import AlgorithmIcon from './assets/algorithm.svg'
 import StopwatchIcon from './assets/stopwatch.svg'
 
+const JaccardVenn = ({ selectedBits, recBits }) => {
+    let intersect = 0;
+    let union = 0;
+    for (let i = 0; i < 8; i++) {
+        const s = selectedBits[i] || 0;
+        const r = recBits[i] || 0;
+        intersect += (s & r).toString(2).split('1').length - 1;
+        union += (s | r).toString(2).split('1').length - 1;
+    }
+
+    return (
+        <div className="viz-box">
+            <h4>Jaccard Tag Overlap</h4>
+            <div className="venn-diag">
+                <div className="venn-circle left">Selected</div>
+                <div className="venn-circle right">Rec</div>
+            </div>
+            <div className="intersection-count">{intersect} Shared Tags</div>
+            <p className="stat-text">Union: {union} Total Unique Tags</p>
+        </div>
+    );
+};
+
+const CosineAngle = ({ score }) => {
+    const angleRad = Math.acos(Math.max(0, Math.min(1, score)));
+    const angleDeg = (angleRad * 180 / Math.PI).toFixed(1);
+
+    return (
+        <div className="viz-box">
+            <h4>Cosine Vector Angle</h4>
+            <svg width="100" height="100" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#444" strokeDasharray="2,2" />
+                <line x1="50" y1="50" x2="50" y2="10" stroke="white" strokeWidth="2" />
+                <line x1="50" y1="50" x2="50" y2="10" stroke="#66c0f4" strokeWidth="3"
+                      style={{ transform: `rotate(${angleDeg}deg)`, transformOrigin: '50px 50px', transition: 'transform 1s' }} />
+            </svg>
+            <p className="stat-text">{angleDeg}° Offset</p>
+        </div>
+    );
+};
+
+const MinHashMatch = ({ selectedSig, recSig }) => {
+    return (
+        <div className="viz-box">
+            <h4>MinHash Signature Alignment</h4>
+            <div className="sig-strip">
+                {selectedSig?.map((val, i) => (
+                    <div key={i} className={`sig-pixel ${val === recSig[i] && val !== 0 ? 'match' : ''}`} />
+                ))}
+            </div>
+            <p className="stat-text">150 Hashes Compared</p>
+        </div>
+    );
+};
+
 function App() {
     const [activeAlgorithm, setActiveAlgorithm] = useState('Default');
     const [query, setQuery] = useState('');
@@ -17,8 +72,10 @@ function App() {
     const [recommendations, set_recommendations] = useState([]);
     const [search_time, set_search_time] = useState(0);
     const [page, set_page] = useState(1);
+    const [detailGame, setDetailGame] = useState(null);
 
     const secondFoldRef = useRef(null);
+    const firstFoldRef = useRef(null);
     const algorithms = ['Default', 'Jaccard', 'Cosine', 'Min-Hash'];
 
     const handleSearch = async (text) => {
@@ -60,6 +117,8 @@ function App() {
 
             set_search_time((performance.now() - startTime).toFixed(0));
             set_recommendations(cappedData);
+
+            secondFoldRef.current?.scrollIntoView({ behavior: 'smooth' });
         } catch (error) {
             console.error("Fetch failed:", error);
         }
@@ -76,8 +135,18 @@ function App() {
         secondFoldRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
+    const resetToHome = () => {
+        set_selected_game(null);
+        set_recommendations([]);
+        setQuery('');
+        setResults([]);
+        firstFoldRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
     useEffect(() => {
-        const handleKeyDown = (e) => { if (e.key === 'Enter') scrollToSecondFold(); };
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter') scrollToSecondFold();
+        };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
@@ -85,8 +154,7 @@ function App() {
     return (
         <div className="app-container">
 
-            {/* First Fold */}
-            <section className="first-fold">
+            <section className="first-fold" ref={firstFoldRef}>
                 <div className="hero">
                     <img src={SteamSearchMain} className="SteamSearchMain" alt="Steam Search" />
                 </div>
@@ -96,7 +164,6 @@ function App() {
                 </div>
             </section>
 
-            {/* Second Fold */}
             <section className="second-fold" ref={secondFoldRef}>
                 {!selected_game && (
                     <p className="callToAction">
@@ -113,7 +180,13 @@ function App() {
                             value={query}
                             onChange={(e) => handleSearch(e.target.value)}
                         />
-                        <img src={SearchGlass} className="searchGlass" alt="Search"/>
+                        {/* --- MODIFIED: onClick triggers reset --- */}
+                        <img
+                            src={SearchGlass}
+                            className="searchGlass"
+                            alt="Search"
+                            onClick={resetToHome}
+                        />
                     </div>
 
                     {results.length > 0 && (
@@ -158,12 +231,31 @@ function App() {
 
                         <div className="game_grid">
                             {recommendations.slice((page - 1) * 9, page * 9).map((rec) => (
-                                <div key={rec.id} className="recommendation_card">
+                                <div key={rec.id} className="recommendation_card" onClick={() => setDetailGame(rec)}>
                                     <img className="gameImage_recomendation" src={rec.imageURL} alt={rec.name} />
                                     <p className="gameName_recomendation">{rec.name}</p>
                                 </div>
                             ))}
                         </div>
+
+                        {detailGame && (
+                            <div className="modal-overlay" onClick={() => setDetailGame(null)}>
+                                <div className="modal-card" onClick={e => e.stopPropagation()}>
+                                    <h2 className="highlight">{detailGame.name}</h2>
+                                    <div className="scroll-area">
+                                        {(activeAlgorithm === 'Default' || activeAlgorithm === 'Jaccard') &&
+                                            <JaccardVenn selectedBits={selected_game.tagBits} recBits={detailGame.tagBits} />}
+
+                                        {(activeAlgorithm === 'Default' || activeAlgorithm === 'Cosine') &&
+                                            <CosineAngle score={detailGame.score} />}
+
+                                        {(activeAlgorithm === 'Default' || activeAlgorithm === 'Min-Hash') &&
+                                            <MinHashMatch selectedSig={selected_game.minHash} recSig={detailGame.minHash} />}
+                                    </div>
+                                    <button className="algorithm" style={{marginTop: '1rem', alignSelf: 'center'}} onClick={() => setDetailGame(null)}>Close</button>
+                                </div>
+                            </div>
+                        )}
 
                         <div className="pagination_footer">
                             <button onClick={() => set_page(p => Math.max(1, p - 1))}>&lt;</button>

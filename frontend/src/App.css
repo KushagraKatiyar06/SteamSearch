@@ -6,7 +6,7 @@
 }
 
 .app-container{
-  overflow-y: scroll;
+  overflow-y: auto;
   height: 100vh;
   width: 100%;
   scroll-behavior: smooth;
@@ -152,14 +152,15 @@
   width: 7rem;
   border: solid;
   border-width: 0.1rem;
-  border-color: white;
-  color: white;
+  border-color: #ffffff;
+  color: #ffffff;
   cursor: pointer;
 
   transition: all 0.2s ease;
   margin: 0 0.1rem;
 
   margin-left: 1rem;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .algorithm.active {
@@ -174,7 +175,7 @@
 
 .search_section {
   position: relative;
-  z-index: 10;
+  z-index: 1;
 }
 
 .search_results_dropdown {
@@ -232,8 +233,8 @@
 
   gap: 1rem;
   padding-bottom: 1rem;
-  min-height: 21rem;
-  max-height: 21rem;
+  min-height: 20rem;
+  max-height: 20rem;
 }
 
 .gameImage_selected {
@@ -255,6 +256,11 @@
   align-self: center;
 
   max-width: 22rem;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 90%;
 }
 
 .stats_container {
@@ -305,7 +311,13 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 2rem;
-  max-height: 15rem;
+  max-height: none;
+  width: 90%;
+  animation: slideUpFade 0.6s ease-out forwards;
+
+  justify-content: center;
+  justify-items: center;
+  margin: 0 auto;
 }
 
 .recommendation_card {
@@ -315,12 +327,21 @@
   border: solid;
   border-color: white;
   border-width: 0.1rem;
+  cursor: pointer;
+
+  width: 100%;
+  max-width: 25rem;
 
   gap: 1rem;
   padding-bottom: 1rem;
-  min-height: 21rem;
-  max-height: 21rem;
+  min-height: 20rem;
+  max-height: 20rem;
   max-width: 30rem;
+}
+
+.recommendation_card:hover {
+  border-color: #66c0f4;
+  background: rgba(102, 192, 244, 0.05);
 }
 
 .gameImage_recomendation {
@@ -342,6 +363,11 @@
   align-self: center;
 
   max-width: 22rem;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 90%;
 }
 
 .pagination_footer {
@@ -380,19 +406,77 @@
   z-index: -1;
 }
 
-.steam, .gaminggraphic {
-  transition: opacity 0.5s ease, transform 0.5s ease;
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
 }
 
-
-.game_grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
-  max-height: none;
-  width: 90%;
-  animation: slideUpFade 0.6s ease-out forwards;
+.modal-card {
+  background: #1b2838;
+  padding: 2rem;
+  width: 500px;
+  max-height: 85vh;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #66c0f4;
 }
+
+.scroll-area {
+  overflow-y: auto;
+  margin-top: 1rem;
+  padding-right: 10px;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 2px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background: #66c0f4;
+  border-radius: 10px;
+}
+
+.viz-box {
+  margin-bottom: 3rem;
+  display: flex; flex-direction: column; align-items: center;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding-bottom: 1rem;
+  color: white;
+}
+
+.venn-diag {
+  position: relative;
+  width: 150px; height: 100px;
+  margin: 1rem 0;
+}
+
+.venn-circle {
+  position: absolute; width: 80px; height: 80px;
+  border-radius: 50%; border: 2px solid white;
+  display: flex; align-items: center; justify-content: center; font-size: 0.7rem;
+}
+
+.venn-circle.left { left: 0; background: rgba(255,255,255,0.1); }
+.venn-circle.right { right: 0; background: rgba(102, 192, 244, 0.2); border-color: #66c0f4; }
+
+.sig-strip {
+  display: grid; grid-template-columns: repeat(30, 1fr);
+  gap: 2px; margin: 1rem 0;
+}
+
+.sig-pixel { width: 8px; height: 8px; background: #333; }
+.sig-pixel.match { background: #66c0f4; box-shadow: 0 0 5px #66c0f4; }
+
+.stat-text { color: #66c0f4; font-size: 0.9rem; margin-top: 0.5rem; }
 
 @keyframes slideUpFade {
   from {
@@ -404,7 +488,3 @@
     transform: translateY(0);
   }
 }
-
-
-
-
