@@ -8,6 +8,8 @@ import Graphic from './assets/gaminggraphic.svg'
 import AlgorithmIcon from './assets/algorithm.svg'
 import StopwatchIcon from './assets/stopwatch.svg'
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
 function App() {
     const [activeAlgorithm, setActiveAlgorithm] = useState('Default');
     const [query, setQuery] = useState('');
@@ -30,7 +32,8 @@ function App() {
             return;
         }
         try {
-            const response = await fetch(`http://localhost:8080/search/${encodeURIComponent(text)}`);
+
+            const response = await fetch(`${API_BASE}/search/${encodeURIComponent(text)}`);
             const data = await response.json();
             setResults(data);
         } catch (error) {
@@ -52,12 +55,10 @@ function App() {
 
         const startTime = performance.now();
         try {
-
             const type = activeAlgorithm.toLowerCase().replace('-', '');
-
-
             const endpoint = type === 'default' ? `global/${game.id}` : `${type}/${game.id}`;
-            const url = `http://localhost:8080/recommend/${endpoint}`;
+
+            const url = `${API_BASE}/recommend/${endpoint}`;
 
             console.log("Fetching from:", url);
             const response = await fetch(url);
