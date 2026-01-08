@@ -16,7 +16,7 @@ Dev Ops: Docker
 # Setup
 
 1. The backend utilizes the Crow library so you will need to clone the vcpkgk repository: https://github.com/microsoft/vcpkg
-2. I used Clion so I go into the CMake settings and link the vcpkge folder. Here what you can do in the cmake:
+2. I used Clion so I go into the CMake settings and link the vcpkge folder. Here is what to do in the cmake:
 
 ```
 # Add these for Windows/vcpkg 
