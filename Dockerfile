@@ -23,4 +23,4 @@ RUN cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && \
 
 EXPOSE 8080
 
-CMD ["./build/steam_server"]
+CMD ["./steam_server"]
