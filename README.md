@@ -18,7 +18,7 @@ Dev Ops: Docker
 1. The backend utilizes the Crow library so you will need to clone the vcpkgk repository: https://github.com/microsoft/vcpkg
 2. I used Clion so I go into the CMake settings and link the vcpkge folder. Here what you can do in the cmake:
 
-'''
+```
 # Add these for Windows/vcpkg 
 set(CMAKE_TOOLCHAIN_FILE "C:/vcpkg/scripts/buildsystems/vcpkg.cmake")
 set(ASIO_INCLUDE_DIR "C:/vcpkg/installed/x64-windows/include")
@@ -29,7 +29,7 @@ target_link_libraries(steam_server
         nlohmann_json::nlohmann_json
         ws2_32
         mswsock)
-'''
+```
 
 3. The frontend is pretty straightforward, just npm install and npm run dev in the frontend folder.
 
