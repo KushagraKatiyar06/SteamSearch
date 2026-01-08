@@ -22,8 +22,20 @@ const char* getString(uint32_t offset) {
 }
 
 void loadData() {
-    // 1. Load Games Binary
-    std::vector<std::string> gameFiles = {"data/games_1.bin", "data/games_2.bin"};
+
+    std::vector<std::string> possiblePaths = {"data/", "src/data/", "../src/data/"};
+    std::string foundPath = "data/";
+
+    // Determine which directory actually contains our data
+    for (const auto& p : possiblePaths) {
+        std::ifstream check(p + "games_1.bin");
+        if (check.good()) {
+            foundPath = p;
+            break;
+        }
+    }
+
+    std::vector<std::string> gameFiles = {foundPath + "games_1.bin", foundPath + "games_2.bin"};
     globalGames.clear();
 
     for (const auto& path : gameFiles) {
@@ -37,11 +49,9 @@ void loadData() {
         std::streamsize gSize = gFile.tellg();
         gFile.seekg(0, std::ios::beg);
 
-        // Calculate how many games are in this specific file
         size_t numGamesInFile = gSize / sizeof(CompactGame);
         size_t currentSize = globalGames.size();
 
-        // Expand the vector and read the data into the new reserved space
         globalGames.resize(currentSize + numGamesInFile);
         gFile.read((char*)&globalGames[currentSize], gSize);
         gFile.close();
@@ -49,8 +59,7 @@ void loadData() {
         std::cout << "Loaded " << numGamesInFile << " games from " << path << std::endl;
     }
 
-    // 2. Load Strings Binary
-    std::string stringsPath = "data/strings.bin";
+    std::string stringsPath = foundPath + "strings.bin";
     std::ifstream sFile(stringsPath, std::ios::binary | std::ios::ate);
 
     if (!sFile.is_open()) {
@@ -64,7 +73,6 @@ void loadData() {
     sFile.read(globalStringPool.data(), sSize);
     sFile.close();
 
-    // 3. Status and Data Verification
     std::cout << "Successfully loaded total of " << globalGames.size() << " games into RAM." << std::endl;
     std::cout << "Successfully loaded " << sSize << " bytes into String Pool." << std::endl;
 
