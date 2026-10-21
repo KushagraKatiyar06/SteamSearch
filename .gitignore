@@ -2,3 +2,4 @@
 cmake-build-debug/
 data/games.json
 steam_server.exe
+data_converter.exe
