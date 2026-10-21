@@ -33,7 +33,7 @@ FetchContent_MakeAvailable(Crow)
 add_executable(data_converter src/converter.cpp)
 target_link_libraries(data_converter nlohmann_json::nlohmann_json)
 
-add_executable(steam_server src/mainServer.cpp)
+add_executable(steam_server src/mainServer.cpp src/GameStore.cpp)
 target_link_libraries(steam_server
         Crow::Crow
         nlohmann_json::nlohmann_json)

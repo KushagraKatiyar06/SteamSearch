@@ -1,184 +1,72 @@
-#include <iostream>
-#include <fstream>
-#include <vector>
 #include <algorithm>
-#include <cmath>
+#include <iostream>
 #include <crow.h>
 #include <nlohmann/json.hpp>
 #include "CompactGame.h"
+#include "GameJson.h"
+#include "GameStore.h"
+#include "Similarity.h"
+#include "UrlUtils.h"
 
 using json = nlohmann::json;
 
-std::vector<CompactGame> globalGames;
-std::vector<char> globalStringPool;
-
-float roundToTwo(float val) {
-    return std::round(val * 100.0f) / 100.0f;
-}
-
-const char* getString(uint32_t offset) {
-    if (offset >= globalStringPool.size()) return "";
-    return &globalStringPool[offset];
-}
-
-void loadData() {
-
-    std::vector<std::string> possiblePaths = {"data/", "src/data/", "../src/data/"};
-    std::string foundPath = "data/";
-
-    // Determine which directory actually contains our data
-    for (const auto& p : possiblePaths) {
-        std::ifstream check(p + "games_1.bin");
-        if (check.good()) {
-            foundPath = p;
-            break;
-        }
-    }
-
-    std::vector<std::string> gameFiles = {foundPath + "games_1.bin", foundPath + "games_2.bin"};
-    globalGames.clear();
-
-    for (const auto& path : gameFiles) {
-        std::ifstream gFile(path, std::ios::binary | std::ios::ate);
-
-        if (!gFile.is_open()) {
-            std::cerr << "ERROR: Could not find " << path << "!" << std::endl;
-            continue;
-        }
-
-        std::streamsize gSize = gFile.tellg();
-        gFile.seekg(0, std::ios::beg);
-
-        size_t numGamesInFile = gSize / sizeof(CompactGame);
-        size_t currentSize = globalGames.size();
-
-        globalGames.resize(currentSize + numGamesInFile);
-        gFile.read((char*)&globalGames[currentSize], gSize);
-        gFile.close();
-
-        std::cout << "Loaded " << numGamesInFile << " games from " << path << std::endl;
-    }
-
-    std::string stringsPath = foundPath + "strings.bin";
-    std::ifstream sFile(stringsPath, std::ios::binary | std::ios::ate);
-
-    if (!sFile.is_open()) {
-        std::cerr << "ERROR: Could not find " << stringsPath << "!" << std::endl;
-        return;
-    }
-
-    std::streamsize sSize = sFile.tellg();
-    sFile.seekg(0, std::ios::beg);
-    globalStringPool.resize(sSize);
-    sFile.read(globalStringPool.data(), sSize);
-    sFile.close();
-
-    std::cout << "Successfully loaded total of " << globalGames.size() << " games into RAM." << std::endl;
-    std::cout << "Successfully loaded " << sSize << " bytes into String Pool." << std::endl;
-
-    std::cout << "--- Data Verification (First 5 Games) ---" << std::endl;
-    for (int i = 0; i < std::min((int)globalGames.size(), 5); i++) {
-        const char* name = getString(globalGames[i].nameOffset);
-        std::cout << "Index " << i << " | ID: " << globalGames[i].id
-                  << " | Name: [" << (name ? name : "NULL") << "]" << std::endl;
-    }
-    std::cout << "-----------------------------------------" << std::endl;
-}
-
-// Jaccard's Tag Similarity
-float getJaccard(const CompactGame& a, const CompactGame& b) {
-    int intersect = 0, unionSize = 0;
-    for (int i = 0; i < 8; i++) {
-        intersect += __builtin_popcount(a.tagBits[i] & b.tagBits[i]);
-        unionSize += __builtin_popcount(a.tagBits[i] | b.tagBits[i]);
-    }
-    return unionSize == 0 ? 0 : (float)intersect / unionSize;
-}
-
-// MinHash
-float getMinHash(const CompactGame& a, const CompactGame& b) {
-    int matches = 0;
-    for (int i = 0; i < 150; i++) {
-        if (a.minHashSignature[i] == b.minHashSignature[i]) matches++;
-    }
-    return (float)matches / 150.0f;
-}
-
-// Weighted Cosine
-float getCosine(const CompactGame& a, const CompactGame& b) {
-    float dot = 0;
-    for (int i = 0; i < 128; i++) dot += a.cosineSignature[i] * b.cosineSignature[i];
-    return dot;
-}
-
-
-std::string urlDecode(std::string str) {
-    std::string res;
-    for (size_t i = 0; i < str.length(); ++i) {
-        if (str[i] == '%' && i + 2 < str.length()) {
-            res += (char)std::strtol(str.substr(i + 1, 2).c_str(), nullptr, 16);
-            i += 2;
-        } else if (str[i] == '+') {
-            res += ' ';
-        } else {
-            res += str[i];
-        }
-    }
-    return res;
+static crow::response jsonResponse(const json& body) {
+    auto response = crow::response(body.dump());
+    response.add_header("Access-Control-Allow-Origin", "*");
+    response.add_header("Content-Type", "application/json; charset=utf-8");
+    return response;
 }
 
 int main() {
-    loadData();
+    GameStore::loadData();
     crow::SimpleApp app;
 
     // Search Route
     CROW_ROUTE(app, "/search/<path>")
     ([&](std::string query) {
         query = urlDecode(query);
-    std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+        std::transform(query.begin(), query.end(), query.begin(), ::tolower);
 
-    std::cout << "Searching for: [" << query << "]" << std::endl;
+        std::cout << "Searching for: [" << query << "]" << std::endl;
 
-    json results = json::array();
-    int count = 0;
+        json results = json::array();
+        int count = 0;
 
-    for (const auto& g : globalGames) {
-        std::string name = getString(g.nameOffset);
-        std::string nameLower = name;
-        std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+        for (const auto& g : GameStore::games()) {
+            std::string name = GameStore::getString(g.nameOffset);
+            std::string nameLower = name;
+            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
 
-        if (nameLower.find(query) != std::string::npos) {
-            results.push_back({
-                {"id", g.id},
-                {"name", name},
-                {"imageURL", getString(g.imageUrlOffset)}
-            });
-            if (++count >= 15) break;
+            if (nameLower.find(query) != std::string::npos) {
+                results.push_back({
+                    {"id", g.id},
+                    {"name", name},
+                    {"imageURL", GameStore::getString(g.imageUrlOffset)}
+                });
+                if (++count >= 15) break;
+            }
         }
-    }
-        auto response = crow::response(results.dump());
-        response.add_header("Access-Control-Allow-Origin", "*");
-        response.add_header("Content-Type", "application/json; charset=utf-8");
-        return response;
+        return jsonResponse(results);
     });
 
     // Balanced Recommendation
     CROW_ROUTE(app, "/recommend/global/<int>")
     ([&](int targetId) {
-        auto it = std::find_if(globalGames.begin(), globalGames.end(), [targetId](const CompactGame& g) {
+        const auto& allGames = GameStore::games();
+        auto it = std::find_if(allGames.begin(), allGames.end(), [targetId](const CompactGame& g) {
             return g.id == targetId;
         });
 
-        if (it == globalGames.end()) return crow::response(404, "Game not found");
+        if (it == allGames.end()) return crow::response(404, "Game not found");
         const CompactGame& target = *it;
 
         std::vector<std::pair<float, int>> results;
-        for (int i = 0; i < (int)globalGames.size(); i++) {
-            if (globalGames[i].id == targetId) continue;
+        for (int i = 0; i < (int)allGames.size(); i++) {
+            if (allGames[i].id == targetId) continue;
 
-            float s_jac = getJaccard(target, globalGames[i]);
-            float s_min = getMinHash(target, globalGames[i]);
-            float s_cos = getCosine(target, globalGames[i]);
+            float s_jac = getJaccard(target, allGames[i]);
+            float s_min = getMinHash(target, allGames[i]);
+            float s_cos = getCosine(target, allGames[i]);
 
             float globalScore = (s_cos * 0.5f) + (s_min * 0.3f) + (s_jac * 0.2f);
             if (globalScore > 0.15f) results.push_back({globalScore, i});
@@ -188,46 +76,30 @@ int main() {
 
         json res = json::array();
         for (int i = 0; i < std::min((int)results.size(), 90); i++) {
-            const auto& g = globalGames[results[i].second];
-
-            json mHash = json::array();
-            for(int j = 0; j < 150; j++) mHash.push_back(g.minHashSignature[j]);
-
-            res.push_back({
-                {"id", g.id},
-                {"name", getString(g.nameOffset)},
-                {"score", roundToTwo(results[i].first)},
-                {"imageURL", getString(g.imageUrlOffset)},
-                {"price", roundToTwo(g.price)},
-                {"algorithm", "global_weighted"},
-                {"tagBits", {g.tagBits[0], g.tagBits[1], g.tagBits[2], g.tagBits[3], g.tagBits[4], g.tagBits[5], g.tagBits[6], g.tagBits[7]}},
-                {"minHash", mHash}
-            });
+            res.push_back(gameToJson(allGames[results[i].second], results[i].first, "global_weighted"));
         }
-        auto response = crow::response(res.dump());
-        response.add_header("Access-Control-Allow-Origin", "*");
-        response.add_header("Content-Type", "application/json; charset=utf-8");
-        return response;
+        return jsonResponse(res);
     });
 
     // Specific Algorithms
     CROW_ROUTE(app, "/recommend/<string>/<int>")
     ([&](std::string type, int id) {
-        auto it = std::find_if(globalGames.begin(), globalGames.end(), [id](const CompactGame& g) {
+        const auto& allGames = GameStore::games();
+        auto it = std::find_if(allGames.begin(), allGames.end(), [id](const CompactGame& g) {
             return g.id == id;
         });
 
-        if (it == globalGames.end()) return crow::response(404, "Game not found");
+        if (it == allGames.end()) return crow::response(404, "Game not found");
         const CompactGame& target = *it;
 
         std::vector<std::pair<float, int>> results;
-        for (int i = 0; i < (int)globalGames.size(); i++) {
-            if (globalGames[i].id == id) continue;
+        for (int i = 0; i < (int)allGames.size(); i++) {
+            if (allGames[i].id == id) continue;
 
             float score = 0;
-            if (type == "jaccard") score = getJaccard(target, globalGames[i]);
-            else if (type == "minhash") score = getMinHash(target, globalGames[i]);
-            else if (type == "cosine") score = getCosine(target, globalGames[i]);
+            if (type == "jaccard") score = getJaccard(target, allGames[i]);
+            else if (type == "minhash") score = getMinHash(target, allGames[i]);
+            else if (type == "cosine") score = getCosine(target, allGames[i]);
 
             if (score > 0.1) results.push_back({score, i});
         }
@@ -236,25 +108,9 @@ int main() {
 
         json res = json::array();
         for (int i = 0; i < std::min((int)results.size(), 90); i++) {
-            const auto& g = globalGames[results[i].second];
-
-            json mHash = json::array();
-            for(int j = 0; j < 150; j++) mHash.push_back(g.minHashSignature[j]);
-
-            res.push_back({
-                {"id", g.id},
-                {"name", getString(g.nameOffset)},
-                {"imageURL", getString(g.imageUrlOffset)},
-                {"score", roundToTwo(results[i].first)},
-                {"price", roundToTwo(g.price)},
-                {"tagBits", {g.tagBits[0], g.tagBits[1], g.tagBits[2], g.tagBits[3], g.tagBits[4], g.tagBits[5], g.tagBits[6], g.tagBits[7]}},
-                {"minHash", mHash}
-            });
+            res.push_back(gameToJson(allGames[results[i].second], results[i].first));
         }
-        auto response = crow::response(res.dump());
-        response.add_header("Access-Control-Allow-Origin", "*");
-        response.add_header("Content-Type", "application/json; charset=utf-8");
-        return response;
+        return jsonResponse(res);
     });
 
     CROW_CATCHALL_ROUTE(app)
