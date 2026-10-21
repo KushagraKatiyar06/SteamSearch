@@ -1,0 +1,217 @@
+.results_display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 95%;
+  margin-top: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+.selected_game_card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+
+  gap: 1rem;
+  padding-bottom: 1rem;
+  min-height: 20rem;
+  max-height: 20rem;
+  animation: slideUpFade 0.5s ease-out both;
+}
+
+.gameImage_selected {
+  width: 90%;
+  border-radius: 14px;
+
+  align-self: center;
+  margin-top: 1.25rem;
+}
+
+.gameName_selected {
+  font-size: 1.75rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  max-width: 22rem;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 90%;
+}
+
+.stats_container {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+
+  margin-top: 1rem;
+  animation: slideUpFade 0.5s ease-out 0.1s both;
+}
+
+.stat_item {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem
+}
+
+.algo_logo{
+  height: 2.5rem;
+  margin-top: -0.25rem;
+}
+
+.algorithm_text{
+  font-size: 1.25rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  max-width: 25rem;
+}
+
+.stopwatch {
+  height: 2.75rem;
+}
+
+.time {
+  font-size: 1.25rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  margin-bottom: 0.25rem;
+}
+
+.recs_status {
+  color: white;
+  font-size: 1.25rem;
+  margin-top: 3rem;
+}
+
+.recs_status:not(.recs_status_error) {
+  animation: pulseText 1.4s ease-in-out infinite;
+}
+
+.recs_status_error {
+  color: #ff6b6b;
+}
+
+.game_grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+  max-height: none;
+  width: 90%;
+  animation: slideUpFade 0.6s ease-out forwards;
+
+  justify-content: center;
+  justify-items: center;
+  margin: 0 auto;
+}
+
+.recommendation_card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+
+  width: 100%;
+  max-width: 25rem;
+
+  gap: 1rem;
+  padding-bottom: 1rem;
+  min-height: 20rem;
+  max-height: 20rem;
+  max-width: 30rem;
+
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.recommendation_card:hover {
+  border-color: rgba(102, 192, 244, 0.6);
+  background: rgba(102, 192, 244, 0.07);
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.score_badge {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.25rem;
+  background: rgba(27, 40, 56, 0.85);
+  border: 1px solid #66c0f4;
+  color: #66c0f4;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  z-index: 2;
+}
+
+.gameImage_recomendation {
+  width: 90%;
+  border-radius: 14px;
+
+  align-self: center;
+  margin-top: 1.25rem;
+}
+
+.gameName_recomendation {
+  font-size: 1.75rem;
+  color: white;
+  font-weight: 0;
+  text-align: left;
+  align-self: center;
+
+  max-width: 22rem;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 90%;
+}
+
+.pagination_footer {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  color: white;
+  font-size: 1.5rem;
+  margin-top: 3.5rem;
+  margin-bottom: 2rem;
+}
+
+.pagination_footer button {
+  background: transparent;
+  border: 1px solid white;
+  color: white;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+}
+
+.pagination_footer button:hover {
+  background: rgba(102, 192, 244, 0.1);
+  border-color: #66c0f4;
+}
+
+.pagination_footer button:active {
+  transform: scale(0.92);
+}

@@ -4,78 +4,31 @@ import enter from './assets/enter.svg'
 import './App.css'
 import SearchGlass from './assets/searchglass.svg'
 import Steam from './assets/steam.svg'
-import Graphic from './assets/gaminggraphic.svg'
+import Graphic from './assets/gaminggraphic.webp'
 import AlgorithmIcon from './assets/algorithm.svg'
 import StopwatchIcon from './assets/stopwatch.svg'
+import GameImage from './components/GameImage'
+import GameDetailModal from './components/GameDetailModal'
+import { useGameSearch } from './hooks/useGameSearch'
+import { useRecommendations } from './hooks/useRecommendations'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const ALGORITHMS = ['Default', 'Jaccard', 'Cosine', 'Min-Hash'];
 
 function App() {
     const [activeAlgorithm, setActiveAlgorithm] = useState('Default');
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
-
-    const [selected_game, set_selected_game] = useState(null);
-    const [recommendations, set_recommendations] = useState([]);
-    const [search_time, set_search_time] = useState(0);
-    const [page, set_page] = useState(1);
     const [detailGame, setDetailGame] = useState(null);
 
     const secondFoldRef = useRef(null);
     const firstFoldRef = useRef(null);
-    const algorithms = ['Default', 'Jaccard', 'Cosine', 'Min-Hash'];
 
-    const handleSearch = async (text) => {
-        setQuery(text);
-        if (!text.trim() || text.length < 2) {
-            setResults([]);
-            return;
-        }
-        try {
+    const search = useGameSearch(API_BASE);
+    const recs = useRecommendations(API_BASE, activeAlgorithm);
 
-            const response = await fetch(`${API_BASE}/search/${encodeURIComponent(text)}`);
-            const data = await response.json();
-            setResults(data);
-        } catch (error) {
-            console.error("Search failed:", error);
-        }
-    };
-
-    useEffect(() => {
-        if (selected_game) {
-            selectGame(selected_game);
-        }
-    }, [activeAlgorithm]);
-
-    const selectGame = async (game) => {
-        setQuery(game.name);
-        setResults([]);
-        set_selected_game(game);
-        set_page(1);
-
-        const startTime = performance.now();
-        try {
-            const type = activeAlgorithm.toLowerCase().replace('-', '');
-            const endpoint = type === 'default' ? `global/${game.id}` : `${type}/${game.id}`;
-
-            const url = `${API_BASE}/recommend/${endpoint}`;
-
-            console.log("Fetching from:", url);
-            const response = await fetch(url);
-            const data = await response.json();
-
-            set_search_time((performance.now() - startTime).toFixed(0));
-            set_recommendations(data.slice(0, 90));
-        } catch (error) {
-            console.error("Fetch failed:", error);
-        }
-    };
-
-    const nextPage = () => {
-        const maxPages = Math.ceil(recommendations.length / 9);
-        if (page < Math.min(maxPages, 10)) {
-            set_page(prev => prev + 1);
-        }
+    const handleSelectGame = (game) => {
+        search.setQuery(game.name);
+        search.clearResults();
+        recs.selectGame(game);
     };
 
     const scrollToSecondFold = () => {
@@ -83,16 +36,16 @@ function App() {
     };
 
     const resetToHome = () => {
-        set_selected_game(null);
-        set_recommendations([]);
-        setQuery('');
-        setResults([]);
+        recs.reset();
+        search.setQuery('');
+        search.clearResults();
         firstFoldRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
     useEffect(() => {
         const handleKeyDown = (e) => {
             if (e.key === 'Enter') scrollToSecondFold();
+            if (e.key === 'Escape') setDetailGame(null);
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
@@ -112,7 +65,7 @@ function App() {
             </section>
 
             <section className="second-fold" ref={secondFoldRef}>
-                {!selected_game && (
+                {!recs.selectedGame && (
                     <p className="callToAction">
                         <span className="highlight"> Search </span> across 100,000 games by entering a title below.
                     </p>
@@ -124,8 +77,8 @@ function App() {
                             type="text"
                             className="searchbar"
                             placeholder="Enter Game"
-                            value={query}
-                            onChange={(e) => handleSearch(e.target.value)}
+                            value={search.query}
+                            onChange={(e) => search.handleSearch(e.target.value)}
                         />
 
                         <img
@@ -136,11 +89,13 @@ function App() {
                         />
                     </div>
 
-                    {results.length > 0 && (
+                    {(search.isSearching || search.searchError || search.results.length > 0) && (
                         <div className="search_results_dropdown">
-                            {results.map((game) => (
-                                <div key={game.id} className="search_result_item" onClick={() => selectGame(game)}>
-                                    <img src={game.imageURL} alt={game.name} />
+                            {search.isSearching && <p className="search_status">Searching...</p>}
+                            {!search.isSearching && search.searchError && <p className="search_status search_status_error">{search.searchError}</p>}
+                            {!search.isSearching && !search.searchError && search.results.map((game) => (
+                                <div key={game.id} className="search_result_item" onClick={() => handleSelectGame(game)}>
+                                    <GameImage key={game.imageURL} src={game.imageURL} alt={game.name} />
                                     <p>{game.name}</p>
                                 </div>
                             ))}
@@ -148,7 +103,7 @@ function App() {
                     )}
 
                     <div className="filters_container">
-                        {algorithms.map((algo) => (
+                        {ALGORITHMS.map((algo) => (
                             <p key={algo} className={`algorithm ${activeAlgorithm === algo ? 'active' : ''}`} onClick={() => setActiveAlgorithm(algo)}>
                                 {algo}
                             </p>
@@ -156,12 +111,12 @@ function App() {
                     </div>
                 </div>
 
-                {selected_game && (
+                {recs.selectedGame && (
                     <div className="results_display">
 
                         <div className="selected_game_card">
-                            <img className="gameImage_selected" src={selected_game.imageURL} alt={selected_game.name} />
-                            <p className="gameName_selected">{selected_game.name}</p>
+                            <GameImage key={recs.selectedGame.imageURL} className="gameImage_selected" src={recs.selectedGame.imageURL} alt={recs.selectedGame.name} />
+                            <p className="gameName_selected">{recs.selectedGame.name}</p>
                         </div>
 
                         <div className="stats_container">
@@ -171,35 +126,45 @@ function App() {
                             </div>
                             <div className="stat_item">
                                 <img className="stopwatch" src={StopwatchIcon} alt="timer" />
-                                <p className="time">{search_time}ms</p>
+                                <p className="time">{recs.searchTime}ms</p>
                             </div>
                         </div>
 
 
-                        <div className="game_grid">
-                            {recommendations.slice((page - 1) * 9, page * 9).map((rec) => (
-                                <div key={rec.id} className="recommendation_card" onClick={() => setDetailGame(rec)}>
-                                    <img className="gameImage_recomendation" src={rec.imageURL} alt={rec.name} />
-                                    <p className="gameName_recomendation">{rec.name}</p>
-                                </div>
-                            ))}
-                        </div>
+                        {recs.isLoading && <p className="recs_status">Loading recommendations...</p>}
+                        {!recs.isLoading && recs.error && <p className="recs_status recs_status_error">{recs.error}</p>}
 
-                        <div className="pagination_footer">
-                            <button onClick={() => set_page(p => Math.max(1, p - 1))}>&lt;</button>
-                            <span>{page}</span>
-                            <button onClick={nextPage}>&gt;</button>
-                        </div>
+                        {!recs.isLoading && !recs.error && (
+                            <>
+                                <div className="game_grid">
+                                    {recs.recommendations.slice((recs.page - 1) * 9, recs.page * 9).map((rec) => (
+                                        <div key={rec.id} className="recommendation_card" onClick={() => setDetailGame(rec)}>
+                                            {rec.score != null && <span className="score_badge">{(rec.score * 100).toFixed(0)}% match</span>}
+                                            <GameImage key={rec.imageURL} className="gameImage_recomendation" src={rec.imageURL} alt={rec.name} />
+                                            <p className="gameName_recomendation">{rec.name}</p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="pagination_footer">
+                                    <button onClick={() => recs.setPage(p => Math.max(1, p - 1))}>&lt;</button>
+                                    <span>{recs.page}</span>
+                                    <button onClick={recs.nextPage}>&gt;</button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 )}
 
-                {!selected_game && (
+                {!recs.selectedGame && (
                     <>
                         <img src={Steam} className="steam" alt="steam_logo"/>
                         <img src={Graphic} className="gaminggraphic" alt="graphic_art" />
                     </>
                 )}
             </section>
+
+            {detailGame && <GameDetailModal game={detailGame} onClose={() => setDetailGame(null)} />}
         </div>
     );
 }

@@ -1,0 +1,131 @@
+.searchbar_container{
+  margin-top: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+}
+
+.searchbar {
+  height: 3rem;
+  width: 45rem;
+  background: rgba(0,0,0,0);
+  border: solid;
+  border-color: white;
+  border-width: 0.1rem;
+  padding-left: 0.6rem;
+  font-family: 'Sansation', sans-serif;
+  font-size: 1.25rem;
+  color: white;
+}
+
+.searchbar:focus {
+  outline: none;
+  border-color: #66c0f4;
+}
+
+.searchGlass {
+  height: 5rem;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.searchGlass:hover{
+  transform: scale(1.05) rotate(-15deg);
+}
+
+.filters_container{
+  display: flex;
+  flex-direction: row;
+  margin-right: 5rem;
+  margin-top: 1rem;
+}
+
+.algorithm {
+  font-size: 1rem;
+  padding: 0.5rem;
+  width: 7rem;
+  border: solid;
+  border-width: 0.1rem;
+  border-color: #ffffff;
+  color: #ffffff;
+  cursor: pointer;
+
+  transition: all 0.2s ease;
+  margin: 0 0.1rem;
+
+  margin-left: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.algorithm.active {
+  border-color: #66c0f4;
+  color: #66c0f4;
+  background: rgba(102, 192, 244, 0.1);
+}
+
+.algorithm:hover:not(.active){
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.algorithm:active {
+  transform: scale(0.95);
+}
+
+.search_section {
+  position: relative;
+  z-index: 1;
+}
+
+.search_results_dropdown {
+  position: absolute;
+  top: 4rem;
+  left: 0;
+  width: 45rem;
+  background: rgba(27, 40, 56, 0.95);
+  border: 1px solid white;
+  z-index: 100;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
+  animation: dropdownIn 0.2s ease-out both;
+}
+
+.search_result_item {
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  transition: background 0.2s ease;
+}
+
+.search_result_item:hover {
+  background: rgba(102, 192, 244, 0.2);
+}
+
+.search_result_item img {
+  width: 175px;
+  height: auto;
+  border: solid;
+  border-width: 0.1rem;
+  border-color: white;
+}
+
+.search_status {
+  color: white;
+  padding: 1rem;
+  margin: 0;
+}
+
+.search_status:not(.search_status_error) {
+  animation: pulseText 1.4s ease-in-out infinite;
+}
+
+.search_status_error {
+  color: #ff6b6b;
+}
