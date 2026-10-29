@@ -1,3 +1,9 @@
+# Steam Search
+
+Steam Search is a game recommendation engine with access to over 100,000 games from Steam. Type in a game you like, and it finds similar ones in under 200ms — no ML model, no vector database, just a C++ backend doing the math directly over a hand-built binary index.
+
+🏅 **Voted as TA's favorite for Data Structures and Algorithms Final Project**
+
 <p align="center">
   <img src="screenshots/Hero.png" alt="Steam Search" width="100%">
 </p>
@@ -12,9 +18,7 @@
   <img src="https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white" alt="Railway">
 </p>
 
-Steam Search is a game recommendation engine with access to over 100,000 games from Steam. Type in a game you like, and it finds similar ones in under 200ms — no ML model, no vector database, just a C++ backend doing the math directly over a hand-built binary index.
-
-**Live demo:** https://steamsearch-production-622f.up.railway.app/
+Deployment: https://steamsearch-production-622f.up.railway.app/
 
 ## What it does
 
