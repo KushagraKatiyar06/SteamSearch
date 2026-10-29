@@ -120,15 +120,7 @@ cmake --build cmake-build-debug --target data_converter
 
 It reads `data/games.json` and `data/tags.txt`, builds the Jaccard/MinHash/cosine signatures for every game, and writes the catalog out as two binary shards (split at 55,000 games) plus a deduplicated string pool.
 
-## API
-
-| Endpoint | Returns |
-|---|---|
-| `GET /search/<query>` | Up to 15 name matches (id, name, image URL) for a search string |
-| `GET /recommend/global/<id>` | Top 90 matches by the blended `0.5·cosine + 0.3·minhash + 0.2·jaccard` score |
-| `GET /recommend/<jaccard\|minhash\|cosine>/<id>` | Top 90 matches by a single algorithm, for comparison |
-
-## Where things live
+## File Structure
 
 | Folder | What is in it |
 |---|---|
