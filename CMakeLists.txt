@@ -6,6 +6,19 @@ project(SteamSearch)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# Command-line builds (CLion sets its own CMAKE_BUILD_TYPE via its CMake profile,
+# so this only affects `cmake -S . -B ...` runs that don't pass -DCMAKE_BUILD_TYPE).
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif ()
+
+option(ENABLE_NATIVE_ARCH "Compile for this machine's CPU (-march=native). Local benchmarking only - do not use for binaries that run on other machines." OFF)
+option(BUILD_BENCHMARKS "Build the bench_runner target" OFF)
+
+if (ENABLE_NATIVE_ARCH AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    add_compile_options(-march=native)
+endif ()
+
 include(FetchContent)
 
 
@@ -38,6 +51,20 @@ target_link_libraries(steam_server
         Crow::Crow
         nlohmann_json::nlohmann_json)
 
+if (BUILD_BENCHMARKS)
+    add_executable(bench_runner bench/bench_main.cpp src/GameStore.cpp)
+    target_include_directories(bench_runner PRIVATE src)
+    target_link_libraries(bench_runner nlohmann_json::nlohmann_json)
+    if (NOT WIN32)
+        target_link_libraries(bench_runner pthread)
+    endif ()
+
+    # bench_runner exits non-zero if the optimized recommend path's output
+    # ever diverges from the brute-force reference it's checked against.
+    enable_testing()
+    add_test(NAME recommend_topk_matches_reference COMMAND bench_runner WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endif ()
+
 if (WIN32)
     target_link_libraries(steam_server ws2_32 mswsock)
     # Statically link the MinGW runtime so the .exe doesn't depend on
@@ -46,6 +73,9 @@ if (WIN32)
     # cmd/PowerShell window).
     target_link_options(data_converter PRIVATE -static-libgcc -static-libstdc++ -static)
     target_link_options(steam_server PRIVATE -static-libgcc -static-libstdc++ -static)
+    if (BUILD_BENCHMARKS)
+        target_link_options(bench_runner PRIVATE -static-libgcc -static-libstdc++ -static)
+    endif ()
 else ()
     target_link_libraries(steam_server pthread)
 endif ()

@@ -34,4 +34,14 @@ inline float getCosine(const CompactGame& a, const CompactGame& b) {
     return dot;
 }
 
+// The /recommend/global blend. One shared function (rather than this
+// expression duplicated at each call site) so every caller compiles to the
+// same code - with -march=native's FMA fusion, copies of the same formula
+// written out separately can round their last bit differently depending on
+// the surrounding code, which breaks bit-for-bit comparisons between an
+// optimized path and a reference implementation.
+inline float getGlobalWeighted(const CompactGame& a, const CompactGame& b) {
+    return (getCosine(a, b) * 0.5f) + (getMinHash(a, b) * 0.3f) + (getJaccard(a, b) * 0.2f);
+}
+
 #endif //STEAMSEARCH_SIMILARITY_H

@@ -1,5 +1,9 @@
 .idea/
 cmake-build-debug/
+build*/
 data/games.json
 steam_server.exe
 data_converter.exe
+bench_runner.exe
+bench_results/
+gmon.out
