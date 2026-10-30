@@ -37,14 +37,14 @@ Deployment: https://steamsearch-production-622f.up.railway.app/
 Each game is reduced to three fixed-size signatures, pre-computed once by the offline converter and baked into the binary index:
 
 - **Jaccard tag similarity** — each game's tags are packed into a 256-bit bitset; similarity is `popcount(intersection) / popcount(union)` across two games' bitsets, computed with `__builtin_popcount`.
-- **MinHash** — 150 independent random permutations of the tag space are hashed per game; similarity is the fraction of the 150 hash slots that agree between two games, a fast approximation of Jaccard that holds up well even as tag lists grow.
+- **MinHash** — 150 independent random permutations of the tag space are hashed per game; similarity is the fraction of the 150 hash slots that agree between two games.
 - **Weighted cosine similarity** — tag vote counts are hashed into a fixed 128-dimensional bucket vector and L2-normalized at index time, so similarity is a single dot product at query time.
 
-The `/recommend/global/<id>` endpoint blends all three into one score — `0.5·cosine + 0.3·minhash + 0.2·jaccard` — and returns the top 90 matches above a relevance floor. Each algorithm is also exposed individually at `/recommend/<jaccard|minhash|cosine>/<id>` for comparison.
+The `/recommend/global/<id>` endpoint blends all three into one score — `0.5·cosine + 0.3·minhash + 0.2·jaccard` — and returns the top 90 matches above a relevance floor, selected with a bounded top-k heap over a scan spread across a few worker threads. Each algorithm is also exposed individually at `/recommend/<jaccard|minhash|cosine>/<id>` for comparison. See [`BENCHMARKS.md`](BENCHMARKS.md) for measured latency, profiling results, and an honest look at how well MinHash's ranking actually agrees with Jaccard's.
 
 ## Features
 
-- **Sub-200ms recommendations** across 100k+ games, powered by pre-computed signatures and zero runtime parsing.
+- **Sub-200ms recommendations** across 100k+ games, powered by pre-computed signatures and zero runtime parsing. Backed by an actual benchmark/profiling pass, not just a claim — see [`BENCHMARKS.md`](BENCHMARKS.md).
 - **Three blendable similarity algorithms** (Jaccard tags, MinHash, weighted cosine), each independently queryable.
 - **Compact binary catalog** — a 600MB raw JSON export of the Steam catalog is converted offline into ~125MB of fixed-size binary structs plus a string pool, cutting server RAM usage from ~1GB to ~300MB.
 - **String interning** — names, images, developers, publishers, and genres are deduplicated into a single string pool and referenced by offset, instead of being duplicated per game.
@@ -133,8 +133,10 @@ It reads `data/games.json` and `data/tags.txt`, builds the Jaccard/MinHash/cosin
 | `data/` | The pre-indexed binary game catalog the server loads on startup |
 | `Legacy/` | Earlier implementation, kept for reference |
 | `screenshots/` | Images used in this README |
+| `bench/` | Benchmark harness, profiling target, and the MinHash accuracy eval - see `BENCHMARKS.md` |
 | `CMakeLists.txt` | Backend build config, including the FetchContent dependency setup |
 | `Dockerfile` | Container build used for local Docker runs and Railway deploys |
 | `setup.bat` / `start.bat` | One-click Windows build and launch scripts |
+| `BENCHMARKS.md` | Measured latency, compiler/profiling results, and the MinHash-vs-Jaccard accuracy check |
 
 ### Developed by Kushagra Katiyar
