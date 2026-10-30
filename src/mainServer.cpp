@@ -1,12 +1,30 @@
 #include <algorithm>
 #include <iostream>
+#include <thread>
 #include <crow.h>
 #include <nlohmann/json.hpp>
 #include "CompactGame.h"
 #include "GameJson.h"
 #include "GameStore.h"
+#include "ParallelTopK.h"
 #include "Similarity.h"
 #include "UrlUtils.h"
+
+constexpr size_t kRecommendationLimit = 90;
+
+// Crow's own worker pool (.multithreaded(), below) already sizes itself to
+// hardware_concurrency() to handle concurrent requests, so a per-request
+// scan can't also claim all cores without the two pools fighting each other
+// under concurrent load. Capping at 4 keeps that contention bounded on
+// larger machines; std::min against hardware_concurrency() matters more on
+// a small/constrained host (e.g. a 1-2 vCPU container), where spawning
+// threads the box has no cores for would just add overhead - on a single
+// core it correctly falls back to 1, which runs with no extra threads at
+// all (see parallelTopK).
+unsigned scanThreads() {
+    static const unsigned n = std::min(4u, std::max(1u, std::thread::hardware_concurrency()));
+    return n;
+}
 
 using json = nlohmann::json;
 
@@ -60,23 +78,12 @@ int main() {
         if (it == allGames.end()) return crow::response(404, "Game not found");
         const CompactGame& target = *it;
 
-        std::vector<std::pair<float, int>> results;
-        for (int i = 0; i < (int)allGames.size(); i++) {
-            if (allGames[i].id == targetId) continue;
-
-            float s_jac = getJaccard(target, allGames[i]);
-            float s_min = getMinHash(target, allGames[i]);
-            float s_cos = getCosine(target, allGames[i]);
-
-            float globalScore = (s_cos * 0.5f) + (s_min * 0.3f) + (s_jac * 0.2f);
-            if (globalScore > 0.15f) results.push_back({globalScore, i});
-        }
-
-        std::sort(results.rbegin(), results.rend());
+        auto top = parallelTopK(allGames, target, (uint32_t)targetId, 0.15f, kRecommendationLimit,
+            getGlobalWeighted, scanThreads());
 
         json res = json::array();
-        for (int i = 0; i < std::min((int)results.size(), 90); i++) {
-            res.push_back(gameToJson(allGames[results[i].second], results[i].first, "global_weighted"));
+        for (const auto& [score, idx] : top) {
+            res.push_back(gameToJson(allGames[idx], score, "global_weighted"));
         }
         return jsonResponse(res);
     });
@@ -92,23 +99,18 @@ int main() {
         if (it == allGames.end()) return crow::response(404, "Game not found");
         const CompactGame& target = *it;
 
-        std::vector<std::pair<float, int>> results;
-        for (int i = 0; i < (int)allGames.size(); i++) {
-            if (allGames[i].id == id) continue;
-
-            float score = 0;
-            if (type == "jaccard") score = getJaccard(target, allGames[i]);
-            else if (type == "minhash") score = getMinHash(target, allGames[i]);
-            else if (type == "cosine") score = getCosine(target, allGames[i]);
-
-            if (score > 0.1) results.push_back({score, i});
+        std::vector<std::pair<float, int>> top;
+        if (type == "jaccard") {
+            top = parallelTopK(allGames, target, (uint32_t)id, 0.1f, kRecommendationLimit, getJaccard, scanThreads());
+        } else if (type == "minhash") {
+            top = parallelTopK(allGames, target, (uint32_t)id, 0.1f, kRecommendationLimit, getMinHash, scanThreads());
+        } else if (type == "cosine") {
+            top = parallelTopK(allGames, target, (uint32_t)id, 0.1f, kRecommendationLimit, getCosine, scanThreads());
         }
 
-        std::sort(results.rbegin(), results.rend());
-
         json res = json::array();
-        for (int i = 0; i < std::min((int)results.size(), 90); i++) {
-            res.push_back(gameToJson(allGames[results[i].second], results[i].first));
+        for (const auto& [score, idx] : top) {
+            res.push_back(gameToJson(allGames[idx], score));
         }
         return jsonResponse(res);
     });
