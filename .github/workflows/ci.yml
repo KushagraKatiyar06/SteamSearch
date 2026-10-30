@@ -14,6 +14,19 @@ jobs:
       - name: Build backend via Dockerfile
         run: docker build -t steamsearch-backend .
 
+  backend-build-clang:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang
+        run: sudo apt-get update && sudo apt-get install -y clang
+      - name: Configure with Clang
+        run: cmake -S . -B build-clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Release -DBUILD_BENCHMARKS=ON
+      - name: Build backend + benchmark harness with Clang
+        run: cmake --build build-clang --target steam_server data_converter bench_runner
+      - name: Run correctness test under Clang
+        run: ctest --test-dir build-clang --output-on-failure
+
   frontend-build:
     runs-on: ubuntu-latest
     defaults:

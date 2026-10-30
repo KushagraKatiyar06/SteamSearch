@@ -30,6 +30,8 @@ The Dockerfile already builds with `-DCMAKE_BUILD_TYPE=Release`, so production w
 
 Run on the same machine (WSL Ubuntu, so both compilers share an OS/libc - the Windows numbers above use MinGW GCC and aren't directly comparable) at matched flags: GCC 15.2.0 vs. Clang 21.1.8, both `-O3 -march=native`, no `-ffast-math`.
 
+This isn't just a one-off local comparison: CI (`.github/workflows/ci.yml`, `backend-build-clang`) configures and builds `steam_server`/`data_converter`/`bench_runner` with Clang and runs the correctness test against it on every push and PR, alongside the existing GCC/Docker build. The project actually compiles clean under both compilers with zero source changes required - this is enforced going forward, not asserted once.
+
 | Function | gcc, p50 | clang, p50 |
 |---|---|---|
 | `getJaccard` | ~21-26 ns | ~20-34 ns |

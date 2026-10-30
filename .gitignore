@@ -2,9 +2,13 @@
 cmake-build-debug/
 build*/
 data/games.json
+steam_server
 steam_server.exe
+data_converter
 data_converter.exe
+bench_runner
 bench_runner.exe
+minhash_eval
 minhash_eval.exe
 bench_results/
 gmon.out
