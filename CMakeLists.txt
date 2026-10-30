@@ -63,6 +63,12 @@ if (BUILD_BENCHMARKS)
     # ever diverges from the brute-force reference it's checked against.
     enable_testing()
     add_test(NAME recommend_topk_matches_reference COMMAND bench_runner WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+    add_executable(minhash_eval bench/minhash_eval.cpp src/GameStore.cpp)
+    target_include_directories(minhash_eval PRIVATE src)
+    if (WIN32)
+        target_link_options(minhash_eval PRIVATE -static-libgcc -static-libstdc++ -static)
+    endif ()
 endif ()
 
 if (WIN32)
