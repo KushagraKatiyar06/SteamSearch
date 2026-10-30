@@ -1,6 +1,6 @@
 # Benchmarks & Profiling
 
-Notes from actually measuring the `/recommend` query path instead of assuming it's fast: a benchmark harness, a compiler flag sweep, `gprof`/`perf` profiling, two optimizations with before/after numbers, and an accuracy check on the MinHash signal. Everything here is reproducible from `bench/`.
+Notes from actually measuring the `/recommend` query path instead of assuming it's fast: a benchmark harness, a compiler flag sweep (including an automated random/evolutionary search), `gprof`/`perf` profiling, two optimizations with before/after numbers, and an accuracy check on the MinHash signal. Everything here is reproducible from `bench/`.
 
 ## Running it yourself
 
@@ -10,9 +10,10 @@ cmake --build build --target bench_runner minhash_eval
 ./bench_runner      # p50/p99 latency + the optimization's correctness check
 ./minhash_eval       # MinHash vs. Jaccard recall@k + speed
 ctest --test-dir build   # same correctness check, wired into CTest
+python3 bench/flag_search.py  # automated compiler-flag search, see below (run under WSL/Linux)
 ```
 
-Run both from the repo root — they look for `data/` the same way the server does. `BUILD_BENCHMARKS` defaults off, so a normal build (and the Docker image) never pulls this in.
+Run the CMake targets from the repo root — they look for `data/` the same way the server does. `BUILD_BENCHMARKS` defaults off, so a normal build (and the Docker image) never pulls this in.
 
 ## Compiler flags
 
@@ -50,6 +51,29 @@ Floating-point addition isn't associative, so vectorizing a `dot +=` reduction c
 This isn't "clang is worse" - it's clang defaulting to the IEEE-754-safe answer and gcc defaulting to a faster-but-technically-reorders-your-floats answer, for the exact same source line. `-ffast-math` is a real tradeoff (no safe NaN/Inf handling, no signed zeros, reassociation everywhere in the translation unit, not just this loop) and shouldn't be reached for by default - but for a hot reduction loop like this one, specifically allowing reassociation (`-fassociative-math -fno-signed-zeros -freciprocal-math`, the subset of `-ffast-math` that actually matters here) is a reasonable, scoped choice once you've confirmed what it's buying you - which is exactly what measuring this showed.
 
 Neither compiler vectorizes `getJaccard`'s popcount loop (`Similarity.h:15`, 8 iterations) - gcc's `-fopt-info-vec-all` reports a failed vectorization attempt; clang doesn't even emit a remark for it, consistent with the earlier call to leave it alone given it's only ~5% of scan time either way.
+
+## Automated flag search (random + evolutionary)
+
+`bench/flag_search.py` automates the compiler-flag question instead of hand-sweeping it: it tries combinations of `-O2`/`-O3`, `-march=native`, LTO, and loop-unrolling flags, builds and runs the real benchmark for each, and keeps whichever one is fastest on the production-representative row (`recommend/global`, 4 threads) - but only among combos that still pass bench_runner's correctness check. A faster build that changes the output gets logged as rejected, not kept.
+
+```bash
+wsl -- python3 bench/flag_search.py --seed 42
+```
+
+Needs a toolchain with LTO support to try that axis meaningfully - CLion's bundled MinGW GCC is built with `--disable-lto` (confirmed via `g++ -v`), so this runs under WSL's GCC instead, invoking `g++` directly on `bench_main.cpp`/`GameStore.cpp` rather than going through CMake.
+
+Two phases:
+1. **Random search** — samples flag combinations uniformly at random (with repeats) from the 24-combination space and evaluates each.
+2. **Evolutionary search** — seeds a small population with the best combos random search found, then for a few generations mutates each (flips exactly one flag axis) and keeps the best of parents+children. With only 24 possible combinations this is really mutation-based local search, not a GA with room to discover something random sampling couldn't - included because it's what was asked for, not because the search space needs it.
+
+Ran twice (same `--seed 42`, so the identical sequence of combinations was tried both times - only the measured timings differ run to run):
+
+| Run | Winner | p50 |
+|---|---|---|
+| 1 | `-O3 -march=native` | 6127us |
+| 2 | `-O3 -march=native -fno-unroll-loops` | 5662us |
+
+The exact winner moved between runs (expected - these are single-digit-millisecond measurements on a shared machine, see the noise caveat at the bottom of this doc), but the pattern underneath didn't: in both runs, every combination in the top 5 included `-march=native`, and every combination with `-flto` or an explicit `-funroll-loops`/`-fno-unroll-loops` scored at or below the `-march=native`-only baseline - never clearly above it. Zero correctness rejections across either run (neither axis touches floating-point semantics, unlike the `-ffast-math` case above). The honest read: for this workload, `-march=native` is the one flag of the four that matters; LTO and explicit unroll hints are noise at best here, not free wins, which matches the earlier compiler-flag table's finding that `-O2`/`-O3`/`-march=native` were close but also explains why reaching further (LTO, unroll pragmas) doesn't pay off without a different bottleneck to target.
 
 ## Profiling
 
