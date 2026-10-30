@@ -25,6 +25,32 @@ Run both from the repo root — they look for `data/` the same way the server do
 
 The Dockerfile already builds with `-DCMAKE_BUILD_TYPE=Release`, so production was never running unoptimized. The real gap is local dev builds: CLion's default profile is Debug, which measured **~5-6x slower** than any optimized build. `-O2` vs `-O3` vs `-march=native` are statistically indistinguishable for this code — not surprising, since it's simple loops over fixed-size arrays rather than anything branch-heavy. (Ranges reflect real run-to-run variance on a dev laptop doing other things, not measurement error.)
 
+## gcc vs. clang
+
+Run on the same machine (WSL Ubuntu, so both compilers share an OS/libc - the Windows numbers above use MinGW GCC and aren't directly comparable) at matched flags: GCC 15.2.0 vs. Clang 21.1.8, both `-O3 -march=native`, no `-ffast-math`.
+
+| Function | gcc, p50 | clang, p50 |
+|---|---|---|
+| `getJaccard` | ~21-26 ns | ~20-34 ns |
+| `getMinHash` | ~65-85 ns | ~67-78 ns |
+| `getCosine` | ~74-88 ns | **~150-190 ns** |
+
+`getJaccard` and `getMinHash` land in the same ballpark under both compilers. `getCosine` doesn't — clang is consistently **~2x slower**, reproduced across three runs each.
+
+The cause, from clang's own vectorization remarks (`-Rpass=loop-vectorize -Rpass-missed=loop-vectorize`) on `getCosine`'s 128-float dot product (`Similarity.h:33`):
+
+```
+remark: loop not vectorized: cannot prove it is safe to reorder floating-point
+operations; allow reordering by specifying '#pragma clang loop vectorize(enable)'
+before the loop or by providing the compiler option '-ffast-math'
+```
+
+Floating-point addition isn't associative, so vectorizing a `dot +=` reduction changes which roundings happen in which order. GCC's `-O3` vectorizes this reduction anyway (confirmed earlier via `-fopt-info-vec-all`); clang's `-O3` refuses without being told reordering is acceptable. Rebuilding with `-ffast-math` makes clang vectorize the same loop and closes the gap - `getCosine` drops to ~60-87 ns, matching or beating gcc, and the full `/recommend/global` scan drops from ~28-32 ms to ~16-17 ms (back in line with gcc's ~16.5-18 ms). The optimized-vs-reference correctness test still passes under `-ffast-math`, since both paths in that comparison are compiled under the same flags within the same binary.
+
+This isn't "clang is worse" - it's clang defaulting to the IEEE-754-safe answer and gcc defaulting to a faster-but-technically-reorders-your-floats answer, for the exact same source line. `-ffast-math` is a real tradeoff (no safe NaN/Inf handling, no signed zeros, reassociation everywhere in the translation unit, not just this loop) and shouldn't be reached for by default - but for a hot reduction loop like this one, specifically allowing reassociation (`-fassociative-math -fno-signed-zeros -freciprocal-math`, the subset of `-ffast-math` that actually matters here) is a reasonable, scoped choice once you've confirmed what it's buying you - which is exactly what measuring this showed.
+
+Neither compiler vectorizes `getJaccard`'s popcount loop (`Similarity.h:15`, 8 iterations) - gcc's `-fopt-info-vec-all` reports a failed vectorization attempt; clang doesn't even emit a remark for it, consistent with the earlier call to leave it alone given it's only ~5% of scan time either way.
+
 ## Profiling
 
 `gprof` (no elevated permissions needed) and later real `perf` with call graphs (`perf record -g -e task-clock`, since WSL2 doesn't expose hardware PMU counters) both agree on where the time in a `/recommend/global` scan goes:
@@ -69,7 +95,6 @@ Side finding from building this eval: 659 games have real tags that are entirely
 
 ## What's not covered here
 
-- **gcc vs. clang** — no clang toolchain installed on the machine these numbers came from.
 - **AVX2 intrinsics / struct-of-arrays layout for `CompactGame`** — the profiling data doesn't support the effort; the dominant costs are already auto-vectorized or are algorithmic (the sort/threading work above), not layout-bound.
 - **An actual flamegraph SVG** — `perf` data was captured, but rendering it needed running third-party scripts the local sandbox didn't allow executing unreviewed; the text-based `perf report` breakdown above carries the same information.
 
